@@ -83,4 +83,35 @@ describe('PhysicsEngine', () => {
     
     expect(energy).toBe(0.5 * (25 + 100));
   });
+
+  it('should separate overlapping balls with identical positions', () => {
+    const eventBus = new EventBus();
+    const table = Table.createDefault();
+    const physics = new PhysicsEngine(table, eventBus);
+
+    const ballA = Ball.createCueBall(120, 120);
+    const ballB = Ball.createNumberedBall(1, '#ff0000', 120, 120);
+
+    physics.simulate([ballA, ballB]);
+
+    expect(ballA.distanceTo(ballB)).toBeGreaterThan(0);
+    expect(physics.getLastSimulationCollisionCount()).toBeGreaterThan(0);
+  });
+
+  it('should reset simulation collision metrics', () => {
+    const eventBus = new EventBus();
+    const table = Table.createDefault();
+    const physics = new PhysicsEngine(table, eventBus);
+
+    const ballA = Ball.createCueBall(100, 100);
+    const ballB = Ball.createNumberedBall(1, '#ff0000', 111, 100);
+    ballA.vx = 10;
+    ballB.vx = -10;
+
+    physics.simulate([ballA, ballB]);
+    expect(physics.getLastSimulationCollisionCount()).toBeGreaterThan(0);
+
+    physics.reset();
+    expect(physics.getLastSimulationCollisionCount()).toBe(0);
+  });
 });

@@ -6,14 +6,22 @@
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "audit:security": "npm audit --audit-level=moderate",
     "build": "tsc",
     "dev": "tsc --watch"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
+    "@vitest/eslint-plugin": "^1.6.9",
+    "@vitest/ui": "^4.0.18",
+    "eslint": "^10.0.2",
+    "globals": "^17.4.0",
     "jsdom": "^23.0.0",
-    "@vitest/ui": "^1.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^4.0.18"
   }
 }

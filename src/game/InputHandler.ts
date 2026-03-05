@@ -7,7 +7,6 @@ import type { Vector2, DragState } from "../types.js";
 import { Vec2, Vector2Utils } from "../models/Vector2.js";
 import { SHOT, VISUAL } from "../constants.js";
 import { EventBus, EventType } from "../core/EventBus.js";
-import type { StartDragEvent, DragEvent, EndDragEvent, AimChangeEvent } from "../core/EventBus.js";
 
 interface AimStateInternal {
   direction: Vec2;
@@ -110,7 +109,7 @@ export class InputHandler {
     this.eventBus.emit({
       type: EventType.START_DRAG,
       position: this.mouse.toObject()
-    } as StartDragEvent);
+    });
   }
 
   private handleMouseUp = (): void => {
@@ -125,7 +124,7 @@ export class InputHandler {
         type: EventType.END_DRAG,
         power,
         direction: this.aim.lockedDirection.toObject()
-      } as EndDragEvent);
+      });
     }
   };
 
@@ -139,7 +138,7 @@ export class InputHandler {
     this.eventBus.emit({
       type: EventType.AIM_CHANGE,
       direction: direction.toObject()
-    } as AimChangeEvent);
+    });
   }
 
   private updateDrag(): void {
@@ -154,7 +153,7 @@ export class InputHandler {
     this.eventBus.emit({
       type: EventType.DRAG,
       pullDistance: this.drag.pullDistance
-    } as DragEvent);
+    });
   }
 
   private calculatePower(): number {

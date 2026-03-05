@@ -36,7 +36,8 @@ export class Pocket implements PocketConfig {
   }
 
   /** Check if a ball center is close enough to be caught */
-  canCatchBall(ballX: number, ballY: number, _ballRadius: number): boolean {
+  canCatchBall(ballX: number, ballY: number, ballRadius: number): boolean {
+    void ballRadius;
     const dx = ballX - this.x;
     const dy = ballY - this.y;
     // Ball is caught if its center enters the catch radius

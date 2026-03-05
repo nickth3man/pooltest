@@ -105,4 +105,42 @@ describe('EventBus', () => {
 
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it('should report handler errors to configured error hook', () => {
+    const eventBus = new EventBus();
+    const errorHook = vi.fn();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    eventBus.setErrorHandler(errorHook);
+    eventBus.on(EventType.BALL_SUNK, () => {
+      throw new Error('handler failed');
+    });
+
+    const ball = Ball.createNumberedBall(1, '#ff0000', 100, 100);
+    const result = eventBus.emit({
+      type: EventType.BALL_SUNK,
+      ball
+    });
+
+    expect(result.delivered).toBe(0);
+    expect(result.errors).toBe(1);
+    expect(errorHook).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+    consoleSpy.mockRestore();
+  });
+
+  it('should fail fast when handler error throwing is enabled', () => {
+    const eventBus = new EventBus({ throwOnHandlerError: true });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    eventBus.on(EventType.BALL_SUNK, () => {
+      throw new Error('boom');
+    });
+
+    const ball = Ball.createNumberedBall(1, '#ff0000', 100, 100);
+    expect(() => eventBus.emit({ type: EventType.BALL_SUNK, ball })).toThrow('boom');
+
+    consoleSpy.mockRestore();
+  });
 });

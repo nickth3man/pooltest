@@ -7,8 +7,11 @@ export class TableRenderer {
   render(table: Table, feltPattern: CanvasPattern | null): void {
     this.drawRails(table);
     this.drawFelt(table, feltPattern);
+    this.drawRailInset(table);
+    this.drawPocketShadows(table);
     this.drawPockets(table);
     this.drawDiamonds(table);
+    this.drawSpotMarkers(table);
   }
 
   private drawRails(table: Table): void {
@@ -47,6 +50,18 @@ export class TableRenderer {
       this.ctx.restore();
     }
 
+    const sheen = this.ctx.createLinearGradient(
+      table.feltX,
+      table.feltY,
+      table.feltX,
+      table.feltY + table.feltHeight
+    );
+    sheen.addColorStop(0, "rgba(255,255,255,0.06)");
+    sheen.addColorStop(0.35, "rgba(255,255,255,0.02)");
+    sheen.addColorStop(1, "rgba(0,0,0,0.12)");
+    this.ctx.fillStyle = sheen;
+    this.ctx.fillRect(table.feltX, table.feltY, table.feltWidth, table.feltHeight);
+
     const vignette = this.ctx.createRadialGradient(
       table.feltX + table.feltWidth * 0.5,
       table.feltY + table.feltHeight * 0.5,
@@ -59,6 +74,41 @@ export class TableRenderer {
     vignette.addColorStop(1, "rgba(0,0,0,0.22)");
     this.ctx.fillStyle = vignette;
     this.ctx.fillRect(table.feltX, table.feltY, table.feltWidth, table.feltHeight);
+
+    this.ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    this.ctx.lineWidth = 1;
+    this.ctx.beginPath();
+    this.ctx.moveTo(table.feltX + 8, table.feltY + table.feltHeight * 0.5);
+    this.ctx.lineTo(table.feltX + table.feltWidth - 8, table.feltY + table.feltHeight * 0.5);
+    this.ctx.stroke();
+  }
+
+  private drawRailInset(table: Table): void {
+    this.ctx.save();
+    this.ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    this.ctx.lineWidth = 4;
+    this.roundedRect(table.feltX - 1, table.feltY - 1, table.feltWidth + 2, table.feltHeight + 2, 2);
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
+
+  private drawPocketShadows(table: Table): void {
+    for (const pocket of table.pockets) {
+      const shadow = this.ctx.createRadialGradient(
+        pocket.x,
+        pocket.y,
+        pocket.drawRadius * 0.55,
+        pocket.x,
+        pocket.y,
+        pocket.drawRadius * 1.8
+      );
+      shadow.addColorStop(0, "rgba(0,0,0,0.36)");
+      shadow.addColorStop(1, "rgba(0,0,0,0)");
+      this.ctx.fillStyle = shadow;
+      this.ctx.beginPath();
+      this.ctx.arc(pocket.x, pocket.y, pocket.drawRadius * 1.8, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
   }
 
   private drawPockets(table: Table): void {
@@ -89,6 +139,21 @@ export class TableRenderer {
     [...positions.top, ...positions.bottom, ...positions.left, ...positions.right].forEach(pos => {
       this.drawDiamond(pos.x, pos.y, diamondSize);
     });
+  }
+
+  private drawSpotMarkers(table: Table): void {
+    const spots = [table.headSpot, table.footSpot];
+    this.ctx.save();
+    this.ctx.strokeStyle = "rgba(241, 227, 186, 0.55)";
+    this.ctx.lineWidth = 1.1;
+
+    for (const spot of spots) {
+      this.ctx.beginPath();
+      this.ctx.arc(spot.x, spot.y, 3.5, 0, Math.PI * 2);
+      this.ctx.stroke();
+    }
+
+    this.ctx.restore();
   }
 
   private drawDiamond(x: number, y: number, r: number): void {

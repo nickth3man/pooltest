@@ -108,14 +108,46 @@ export type GameEvent =
   | SunkCountChangeEvent
   | ReadyToShootChangeEvent;
 
-export type EventHandler = (event: GameEvent) => void;
+export type EventMap = {
+  [EventType.BALL_SUNK]: BallSunkEvent;
+  [EventType.SCRATCH]: ScratchEvent;
+  [EventType.COLLISION]: CollisionEvent;
+  [EventType.CUSHION_HIT]: CushionHitEvent;
+  [EventType.START_DRAG]: StartDragEvent;
+  [EventType.DRAG]: DragEvent;
+  [EventType.END_DRAG]: EndDragEvent;
+  [EventType.AIM_CHANGE]: AimChangeEvent;
+  [EventType.STATE_CHANGE]: StateChangeEvent;
+  [EventType.BALLS_STOPPED]: BallsStoppedEvent;
+  [EventType.SUNK_COUNT_CHANGE]: SunkCountChangeEvent;
+  [EventType.READY_TO_SHOOT_CHANGE]: ReadyToShootChangeEvent;
+};
+
+export type EventHandler<T extends EventType = EventType> = (event: EventMap[T]) => void;
+
+export interface EventBusOptions {
+  onHandlerError?: (error: unknown, event: GameEvent) => void;
+  throwOnHandlerError?: boolean;
+}
+
+export interface EmitResult {
+  delivered: number;
+  errors: number;
+}
 
 /**
  * EventBus - Central event management system
  * Provides type-safe event emission and subscription
  */
 export class EventBus {
-  private handlers: Map<EventType, Set<EventHandler>> = new Map();
+  private handlers: Map<EventType, Set<(event: GameEvent) => void>> = new Map();
+  private onHandlerError?: (error: unknown, event: GameEvent) => void;
+  private throwOnHandlerError: boolean;
+
+  constructor(options: EventBusOptions = {}) {
+    this.onHandlerError = options.onHandlerError;
+    this.throwOnHandlerError = options.throwOnHandlerError ?? false;
+  }
 
   /**
    * Subscribe to an event type
@@ -123,17 +155,18 @@ export class EventBus {
    * @param handler - Handler function to call when event is emitted
    * @returns Unsubscribe function
    */
-  on(type: EventType, handler: EventHandler): () => void {
+  on<T extends EventType>(type: T, handler: EventHandler<T>): () => void {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set());
     }
     
     const handlers = this.handlers.get(type)!;
-    handlers.add(handler);
+    const wrappedHandler = handler as (event: GameEvent) => void;
+    handlers.add(wrappedHandler);
     
     // Return unsubscribe function
     return () => {
-      handlers.delete(handler);
+      handlers.delete(wrappedHandler);
       if (handlers.size === 0) {
         this.handlers.delete(type);
       }
@@ -146,8 +179,8 @@ export class EventBus {
    * @param handler - Handler function to call when event is emitted
    * @returns Unsubscribe function
    */
-  once(type: EventType, handler: EventHandler): () => void {
-    const wrappedHandler = (event: GameEvent) => {
+  once<T extends EventType>(type: T, handler: EventHandler<T>): () => void {
+    const wrappedHandler: EventHandler<T> = (event) => {
       handler(event);
       unsubscribe();
     };
@@ -160,17 +193,37 @@ export class EventBus {
    * Emit an event to all subscribers
    * @param event - Event to emit
    */
-  emit(event: GameEvent): void {
+  emit<T extends EventType>(event: EventMap[T]): EmitResult {
+    let delivered = 0;
+    let errors = 0;
+
     const handlers = this.handlers.get(event.type);
     if (handlers) {
       handlers.forEach(handler => {
         try {
           handler(event);
+          delivered++;
         } catch (error) {
+          errors++;
           console.error(`Error in event handler for ${event.type}:`, error);
+          this.onHandlerError?.(error, event);
+
+          if (this.throwOnHandlerError) {
+            throw error;
+          }
         }
       });
     }
+
+    return { delivered, errors };
+  }
+
+  setErrorHandler(handler: ((error: unknown, event: GameEvent) => void) | undefined): void {
+    this.onHandlerError = handler;
+  }
+
+  setThrowOnHandlerError(throwOnHandlerError: boolean): void {
+    this.throwOnHandlerError = throwOnHandlerError;
   }
 
   /**

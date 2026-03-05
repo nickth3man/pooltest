@@ -30,22 +30,35 @@ const game = new Game(canvas, {
   }
 });
 
-// Setup restart button
-restartBtn.addEventListener("click", () => {
-  game.reset();
-});
+let isCleanedUp = false;
 
-// Start the game
-game.start();
+const handleRestart = (): void => {
+  if (!isCleanedUp) {
+    game.reset();
+  }
+};
 
-// Handle page unload
-document.addEventListener("visibilitychange", () => {
+const handleVisibilityChange = (): void => {
   if (document.hidden) {
     // Optional: pause game when tab is hidden
   }
-});
+};
 
-// Cleanup on page unload
-window.addEventListener("beforeunload", () => {
+const cleanup = (): void => {
+  if (isCleanedUp) {
+    return;
+  }
+
+  isCleanedUp = true;
+  restartBtn.removeEventListener("click", handleRestart);
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  window.removeEventListener("beforeunload", cleanup);
   game.destroy();
-});
+};
+
+restartBtn.addEventListener("click", handleRestart);
+document.addEventListener("visibilitychange", handleVisibilityChange);
+window.addEventListener("beforeunload", cleanup, { once: true });
+
+// Start the game
+game.start();

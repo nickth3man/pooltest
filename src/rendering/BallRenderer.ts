@@ -12,6 +12,7 @@ export class BallRenderer {
   }
 
   private renderBall(ball: Ball): void {
+    this.drawContactShadow(ball);
     this.drawShadow();
     this.drawBallBody(ball);
     this.drawBallOutline(ball);
@@ -23,12 +24,29 @@ export class BallRenderer {
     this.drawSpecularHighlight(ball);
   }
 
+  private drawContactShadow(ball: Ball): void {
+    this.ctx.save();
+    this.ctx.fillStyle = "rgba(0,0,0,0.18)";
+    this.ctx.beginPath();
+    this.ctx.ellipse(
+      ball.x + 1.3,
+      ball.y + ball.radius * 0.72,
+      ball.radius * 0.9,
+      ball.radius * 0.5,
+      0,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+    this.ctx.restore();
+  }
+
   private drawShadow(): void {
     this.ctx.save();
-    this.ctx.shadowColor = "rgba(0,0,0,0.35)";
-    this.ctx.shadowBlur = 6;
-    this.ctx.shadowOffsetX = 2;
-    this.ctx.shadowOffsetY = 3;
+    this.ctx.shadowColor = "rgba(0,0,0,0.42)";
+    this.ctx.shadowBlur = 8;
+    this.ctx.shadowOffsetX = 2.5;
+    this.ctx.shadowOffsetY = 3.5;
   }
 
   private drawBallBody(ball: Ball): void {
@@ -40,8 +58,9 @@ export class BallRenderer {
       ball.y,
       ball.radius
     );
-    gradient.addColorStop(0, "rgba(255,255,255,0.34)");
-    gradient.addColorStop(1, ball.color);
+    gradient.addColorStop(0, "rgba(255,255,255,0.46)");
+    gradient.addColorStop(0.58, ball.color);
+    gradient.addColorStop(1, this.darkenHex(ball.color, 0.4));
     this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
     this.ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
@@ -63,8 +82,12 @@ export class BallRenderer {
     this.ctx.arc(ball.x, ball.y, ball.radius * 0.47, 0, Math.PI * 2);
     this.ctx.fill();
 
+    this.ctx.strokeStyle = "rgba(0,0,0,0.25)";
+    this.ctx.lineWidth = 0.9;
+    this.ctx.stroke();
+
     this.ctx.fillStyle = "#1e1e1e";
-    this.ctx.font = "bold 10px Trebuchet MS";
+    this.ctx.font = "bold 10px Georgia";
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
     this.ctx.fillText(String(ball.number), ball.x, ball.y + 0.3);
@@ -81,5 +104,29 @@ export class BallRenderer {
       Math.PI * 2
     );
     this.ctx.fill();
+
+    this.ctx.fillStyle = "rgba(255,255,255,0.14)";
+    this.ctx.beginPath();
+    this.ctx.arc(
+      ball.x - ball.radius * 0.12,
+      ball.y - ball.radius * 0.24,
+      ball.radius * 0.09,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+  }
+
+  private darkenHex(hex: string, amount: number): string {
+    const value = hex.replace("#", "");
+    if (value.length !== 6) return hex;
+
+    const clamp = (n: number): number => Math.max(0, Math.min(255, Math.round(n)));
+    const scale = 1 - amount;
+
+    const r = clamp(parseInt(value.slice(0, 2), 16) * scale);
+    const g = clamp(parseInt(value.slice(2, 4), 16) * scale);
+    const b = clamp(parseInt(value.slice(4, 6), 16) * scale);
+    return `rgb(${r}, ${g}, ${b})`;
   }
 }

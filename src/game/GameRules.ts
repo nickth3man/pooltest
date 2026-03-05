@@ -16,7 +16,7 @@ export interface RuleResult {
 }
 
 export class GameRules {
-  private sunkBalls: number[] = [];
+  private sunkBalls: Set<number> = new Set();
   private pocketFlashes: PocketFlash[] = [];
 
   /**
@@ -32,13 +32,15 @@ export class GameRules {
     };
 
     this.pocketFlashes.push(pocketFlash);
-    this.sunkBalls.push(ball.number);
+    if (!ball.isCue && ball.number >= 1 && ball.number <= 7) {
+      this.sunkBalls.add(ball.number);
+    }
 
     const isWin = this.checkWinCondition();
 
     return {
       pocketFlashes: [...this.pocketFlashes],
-      sunkNumbers: [...this.sunkBalls],
+      sunkNumbers: Array.from(this.sunkBalls),
       shouldSpawnCueBall: false,
       isWin,
       message: isWin ? "Congratulations! You won!" : undefined
@@ -61,7 +63,7 @@ export class GameRules {
 
     return {
       pocketFlashes: [...this.pocketFlashes],
-      sunkNumbers: [...this.sunkBalls],
+      sunkNumbers: Array.from(this.sunkBalls),
       shouldSpawnCueBall: true,
       isWin: false
     };
@@ -72,21 +74,31 @@ export class GameRules {
    * @returns True if all numbered balls (1-7) are sunk
    */
   checkWinCondition(): boolean {
-    return this.sunkBalls.length === 7;
+    if (this.sunkBalls.size !== 7) {
+      return false;
+    }
+
+    for (let number = 1; number <= 7; number++) {
+      if (!this.sunkBalls.has(number)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
    * Get current sunk ball count
    */
   get sunkCount(): number {
-    return this.sunkBalls.length;
+    return this.sunkBalls.size;
   }
 
   /**
    * Get sunk ball numbers
    */
   getSunkNumbers(): number[] {
-    return [...this.sunkBalls];
+    return Array.from(this.sunkBalls);
   }
 
   /**
@@ -113,7 +125,7 @@ export class GameRules {
    * Reset game rules state
    */
   reset(): void {
-    this.sunkBalls = [];
+    this.sunkBalls.clear();
     this.pocketFlashes = [];
   }
 }

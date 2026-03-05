@@ -9,14 +9,13 @@ import { Table } from "../models/Table.js";
 import { PHYSICS, BALL_RADIUS } from "../constants.js";
 import { EventBus, EventType } from "../core/EventBus.js";
 
-import type { BallSunkEvent, CollisionEvent, CushionHitEvent, ScratchEvent } from "../core/EventBus.js";
-
 
 
 export class PhysicsEngine {
   private table: Table;
   private eventBus: EventBus;
-  private stepFriction: number
+  private stepFriction: number;
+  private lastSimulationCollisionCount: number = 0;
 
   constructor(table: Table, eventBus: EventBus) {
     this.table = table;
@@ -27,6 +26,8 @@ export class PhysicsEngine {
 
   /** Simulate physics for one frame */
   simulate(balls: Ball[]): void {
+    this.lastSimulationCollisionCount = 0;
+
     for (let step = 0; step < PHYSICS.substeps; step++) {
       // Update ball positions
       this.updatePositions(balls);
@@ -106,7 +107,7 @@ export class PhysicsEngine {
         this.eventBus.emit({
           type: EventType.CUSHION_HIT,
           ball
-        } as CushionHitEvent);
+        });
       }
     }
   }
@@ -121,56 +122,75 @@ export class PhysicsEngine {
         const ballB = balls[j];
         if (!ballB.inPlay) continue;
 
-        this.resolveBallCollision(ballA, ballB);
+        if (this.resolveBallCollision(ballA, ballB)) {
+          this.lastSimulationCollisionCount++;
+        }
       }
     }
   }
 
   /** Resolve collision between two balls */
-  private resolveBallCollision(a: Ball, b: Ball): void {
+  private resolveBallCollision(a: Ball, b: Ball): boolean {
     const dx = b.x - a.x;
-    const dy = b.y - a.y
-    const distSq = dx * dx + dy * dy
-    const minDist = a.radius + b.radius
+    const dy = b.y - a.y;
+    const distSq = dx * dx + dy * dy;
+    const minDist = a.radius + b.radius;
 
     // No collision
-    if (distSq === 0 || distSq > minDist * minDist) return;
+    if (distSq > minDist * minDist) return false;
 
-    const dist = Math.sqrt(distSq)
-    const nx = dx / dist
-    const ny = dy / dist
-    const overlap = minDist - dist
+    let nx: number;
+    let ny: number;
+    let dist: number;
+
+    if (distSq === 0) {
+      const seed = (a.number + 1) * 92821 + (b.number + 1) * 68917;
+      const angle = (seed % 360) * (Math.PI / 180);
+      nx = Math.cos(angle);
+      ny = Math.sin(angle);
+      dist = 0;
+    } else {
+      dist = Math.sqrt(distSq);
+      nx = dx / dist;
+      ny = dy / dist;
+    }
+
+    const overlap = minDist - dist;
 
     // Separate balls to prevent sticking
-    a.x -= nx * overlap * 0.5
-    a.y -= ny * overlap * 0.5
-    b.x += nx * overlap * 0.5
-    b.y += ny * overlap * 0.5
+    a.x -= nx * overlap * 0.5;
+    a.y -= ny * overlap * 0.5;
+    b.x += nx * overlap * 0.5;
+    b.y += ny * overlap * 0.5;
 
     // Calculate relative velocity
-    const rvx = b.vx - a.vx
-    const rvy = b.vy - a.vy
-    const velAlongNormal = rvx * nx + rvy * ny
+    const rvx = b.vx - a.vx;
+    const rvy = b.vy - a.vy;
+    const velAlongNormal = rvx * nx + rvy * ny;
 
     // Do not resolve if velocities are separating
-    if (velAlongNormal > 0) return
+    if (velAlongNormal > 0) return true;
 
     // Calculate impulse with restitution
-    const impulse = -(1 + PHYSICS.ballRestitution) * velAlongNormal / 2
-    const impactForce = Math.abs(velAlongNormal)
+    const impulse = -(1 + PHYSICS.ballRestitution) * velAlongNormal / 2;
+    const impactForce = Math.abs(velAlongNormal);
 
     // Apply impulse
-    a.vx -= impulse * nx
-    a.vy -= impulse * ny
-    b.vx += impulse * nx
-    b.vy += impulse * ny
+    a.vx -= impulse * nx;
+    a.vy -= impulse * ny;
+    b.vx += impulse * nx;
+    b.vy += impulse * ny;
 
-    this.eventBus.emit({
-      type: EventType.COLLISION,
-      ballA: a,
-      ballB: b,
-      impactForce
-    } as CollisionEvent);
+    if (impactForce > 0) {
+      this.eventBus.emit({
+        type: EventType.COLLISION,
+        ballA: a,
+        ballB: b,
+        impactForce
+      });
+    }
+
+    return true;
   }
 
   /** Detect and handle balls entering pockets */
@@ -186,12 +206,12 @@ export class PhysicsEngine {
             this.eventBus.emit({
               type: EventType.SCRATCH,
               cueBall: ball
-            } as ScratchEvent);
+            });
           } else {
             this.eventBus.emit({
               type: EventType.BALL_SUNK,
               ball
-            } as BallSunkEvent);
+            });
           }
           break
         }
@@ -261,8 +281,13 @@ export class PhysicsEngine {
     return energy;
   }
 
+  getLastSimulationCollisionCount(): number {
+    return this.lastSimulationCollisionCount;
+  }
+
   /** Reset the physics engine */
   reset(): void {
-    // Any per-game reset logic
+    this.lastSimulationCollisionCount = 0;
+    this.stepFriction = Math.pow(PHYSICS.friction, 1 / PHYSICS.substeps);
   }
 }

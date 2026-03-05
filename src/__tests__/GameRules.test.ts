@@ -31,6 +31,16 @@ describe('GameRules', () => {
     expect(gameRules.sunkCount).toBe(7);
   });
 
+  it('should not count duplicate sink events toward win condition', () => {
+    for (let i = 0; i < 6; i++) {
+      const ball = Ball.createNumberedBall(1, '#ff0000', 100, 100);
+      gameRules.handleBallSunk(ball);
+    }
+
+    expect(gameRules.sunkCount).toBe(1);
+    expect(gameRules.checkWinCondition()).toBe(false);
+  });
+
   it('should handle scratch', () => {
     const cueBall = Ball.createCueBall(100, 100);
     

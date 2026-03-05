@@ -156,38 +156,38 @@ export class Vec2 implements Vector2 {
 }
 
 /** Utility functions for Vector2 operations */
-export namespace Vector2Utils {
+export const Vector2Utils = {
   /** Clamp a value between min and max */
-  export function clamp(value: number, min: number, max: number): number {
+  clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
-  }
+  },
 
   /** Calculate distance between two points */
-  export function dist(a: Vector2, b: Vector2): number {
+  dist(a: Vector2, b: Vector2): number {
     return Math.hypot(b.x - a.x, b.y - a.y);
-  }
+  },
 
   /** Calculate distance squared (faster, for comparisons) */
-  export function distSq(a: Vector2, b: Vector2): number {
+  distSq(a: Vector2, b: Vector2): number {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     return dx * dx + dy * dy;
-  }
+  },
 
   /** Normalize a vector with a fallback */
-  export function normalize(v: Vector2, fallback: Vector2 = { x: 1, y: 0 }): Vector2 {
+  normalize(v: Vector2, fallback: Vector2 = { x: 1, y: 0 }): Vector2 {
     const m = Math.hypot(v.x, v.y);
     if (m < 1e-7) {
       return { x: fallback.x, y: fallback.y };
     }
     return { x: v.x / m, y: v.y / m };
-  }
+  },
 
   /** Linear interpolation between two vectors */
-  export function lerp(a: Vector2, b: Vector2, t: number): Vector2 {
+  lerp(a: Vector2, b: Vector2, t: number): Vector2 {
     return {
       x: a.x + (b.x - a.x) * t,
       y: a.y + (b.y - a.y) * t
     };
   }
-}
+};

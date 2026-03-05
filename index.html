@@ -8,15 +8,32 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="hud">
-      <div class="hud-group">
-        <span>Sunk: <span id="sunk-count" class="value">0</span></span>
-        <span>State: <span id="state-text" class="value">AIMING</span></span>
-        <span id="shoot-indicator" class="ready">Shoot!</span>
-      </div>
-      <button id="restart-btn" type="button">Restart</button>
+    <header class="game-header">
+      <p class="kicker">Classic Table Mode</p>
+      <h1>Billiards</h1>
+      <div class="header-line" aria-hidden="true"></div>
+    </header>
+
+    <div class="table-stage">
+      <div class="stage-glow" aria-hidden="true"></div>
+      <div class="stage-frame" aria-hidden="true"></div>
+      <canvas id="table" width="900" height="500"></canvas>
     </div>
-    <canvas id="table" width="900" height="500"></canvas>
+
+    <div class="hud">
+      <div class="hud-card stats">
+        <span class="label">Sunk</span>
+        <span id="sunk-count" class="value">0</span>
+      </div>
+      <div class="hud-card state">
+        <span class="label">State</span>
+        <span id="state-text" class="value" aria-live="polite">AIMING</span>
+      </div>
+      <div class="hud-card actions">
+        <span id="shoot-indicator" class="ready" role="status" aria-live="polite">Take the shot</span>
+        <button id="restart-btn" type="button">New Rack</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="dist/main.js"></script>
