@@ -41,14 +41,14 @@ export class InputHandler {
   }
 
   private bindEvents(): void {
-    this.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
-    this.canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
-    this.canvas.addEventListener("mouseup", this.handleMouseUp.bind(this));
-    this.canvas.addEventListener("mouseleave", this.handleMouseUp.bind(this));
+    this.canvas.addEventListener("mousemove", this.handleMouseMove);
+    this.canvas.addEventListener("mousedown", this.handleMouseDown);
+    this.canvas.addEventListener("mouseup", this.handleMouseUp);
+    this.canvas.addEventListener("mouseleave", this.handleMouseUp);
 
-    this.canvas.addEventListener("touchmove", this.handleTouchMove.bind(this));
-    this.canvas.addEventListener("touchstart", this.handleTouchStart.bind(this));
-    this.canvas.addEventListener("touchend", this.handleMouseUp.bind(this));
+    this.canvas.addEventListener("touchmove", this.handleTouchMove);
+    this.canvas.addEventListener("touchstart", this.handleTouchStart);
+    this.canvas.addEventListener("touchend", this.handleMouseUp);
   }
 
   private getMousePosition(clientX: number, clientY: number): Vec2 {
@@ -62,7 +62,7 @@ export class InputHandler {
     );
   }
 
-  private handleMouseMove(event: MouseEvent): void {
+  private handleMouseMove = (event: MouseEvent): void => {
     if (!this.isEnabled) return;
 
     this.mouse = this.getMousePosition(event.clientX, event.clientY);
@@ -70,9 +70,9 @@ export class InputHandler {
     if (this.drag.isDragging) {
       this.updateDrag();
     }
-  }
+  };
 
-  private handleTouchMove(event: TouchEvent): void {
+  private handleTouchMove = (event: TouchEvent): void => {
     if (!this.isEnabled) return;
     event.preventDefault();
 
@@ -82,23 +82,23 @@ export class InputHandler {
     if (this.drag.isDragging) {
       this.updateDrag();
     }
-  }
+  };
 
-  private handleMouseDown(event: MouseEvent): void {
+  private handleMouseDown = (event: MouseEvent): void => {
     if (!this.isEnabled) return;
 
     this.mouse = this.getMousePosition(event.clientX, event.clientY);
     this.startDrag();
-  }
+  };
 
-  private handleTouchStart(event: TouchEvent): void {
+  private handleTouchStart = (event: TouchEvent): void => {
     if (!this.isEnabled) return;
     event.preventDefault();
 
     const touch = event.touches[0];
     this.mouse = this.getMousePosition(touch.clientX, touch.clientY);
     this.startDrag();
-  }
+  };
 
   private startDrag(): void {
     this.drag.isDragging = true;
@@ -113,7 +113,7 @@ export class InputHandler {
     } as StartDragEvent);
   }
 
-  private handleMouseUp(): void {
+  private handleMouseUp = (): void => {
     if (!this.drag.isDragging) return;
 
     const power = this.calculatePower();
@@ -127,7 +127,7 @@ export class InputHandler {
         direction: this.aim.lockedDirection.toObject()
       } as EndDragEvent);
     }
-  }
+  };
 
   updateAimFromCueBall(cueBallPosition: Vector2): void {
     const direction = new Vec2(
@@ -204,12 +204,12 @@ export class InputHandler {
   }
 
   destroy(): void {
-    this.canvas.removeEventListener("mousemove", this.handleMouseMove.bind(this));
-    this.canvas.removeEventListener("mousedown", this.handleMouseDown.bind(this));
-    this.canvas.removeEventListener("mouseup", this.handleMouseUp.bind(this));
-    this.canvas.removeEventListener("mouseleave", this.handleMouseUp.bind(this));
-    this.canvas.removeEventListener("touchmove", this.handleTouchMove.bind(this));
-    this.canvas.removeEventListener("touchstart", this.handleTouchStart.bind(this));
-    this.canvas.removeEventListener("touchend", this.handleMouseUp.bind(this));
+    this.canvas.removeEventListener("mousemove", this.handleMouseMove);
+    this.canvas.removeEventListener("mousedown", this.handleMouseDown);
+    this.canvas.removeEventListener("mouseup", this.handleMouseUp);
+    this.canvas.removeEventListener("mouseleave", this.handleMouseUp);
+    this.canvas.removeEventListener("touchmove", this.handleTouchMove);
+    this.canvas.removeEventListener("touchstart", this.handleTouchStart);
+    this.canvas.removeEventListener("touchend", this.handleMouseUp);
   }
 }

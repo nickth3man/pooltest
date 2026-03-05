@@ -1,5 +1,5 @@
 import type { PocketFlash, RenderContext } from "../types.js";
-import { BALL_COLORS, VISUAL, SHOT } from "../constants.js";
+import { BALL_COLORS, VISUAL, SHOT, TIMING } from "../constants.js";
 
 export class UIRenderer {
   constructor(private ctx: RenderContext) {}
@@ -61,7 +61,7 @@ export class UIRenderer {
   }
 
   renderPocketFlashes(pocketFlashes: PocketFlash[]): void {
-    const maxLife = 220;
+    const maxLife = TIMING.pocketFlashDuration;
 
     for (const flash of pocketFlashes) {
       const t = flash.life / maxLife;

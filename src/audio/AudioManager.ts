@@ -7,6 +7,28 @@ export class AudioManager {
   private context: AudioContext | null = null;
   private isMuted: boolean = false;
 
+  private withAudioContext(effect: (context: AudioContext) => void): void {
+    if (!this.context || this.isMuted) return;
+    effect(this.context);
+  }
+
+  private playSynth(
+    context: AudioContext,
+    configure: (oscillator: OscillatorNode, gainNode: GainNode, now: number) => number
+  ): void {
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gainNode = context.createGain();
+
+    const duration = configure(oscillator, gainNode, now);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator.start(now);
+    oscillator.stop(now + duration);
+  }
+
   constructor() {
     // Audio context is created lazily on first user interaction
   }
@@ -28,98 +50,73 @@ export class AudioManager {
 
   /** Play pocket sound effect */
   playPocketSound(): void {
-    if (!this.context || this.isMuted) return;
+    this.withAudioContext((context) => {
+      this.playSynth(context, (oscillator, gainNode, now) => {
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(740, now);
+        oscillator.frequency.exponentialRampToValueAtTime(370, now + 0.08);
 
-    const now = this.context.currentTime;
-    const oscillator = this.context.createOscillator();
-    const gainNode = this.context.createGain();
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
 
-    oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(740, now);
-    oscillator.frequency.exponentialRampToValueAtTime(370, now + 0.08);
-
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(this.context.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + 0.09);
+        return 0.09;
+      });
+    });
   }
 
   /** Play cue ball hit sound */
   playCueHitSound(power: number): void {
-    if (!this.context || this.isMuted) return;
+    this.withAudioContext((context) => {
+      this.playSynth(context, (oscillator, gainNode, now) => {
+        const baseFreq = 200 + power * 10;
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(baseFreq, now);
+        oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.05);
 
-    const now = this.context.currentTime;
-    const oscillator = this.context.createOscillator();
-    const gainNode = this.context.createGain();
+        const volume = Math.min(0.1 + power * 0.005, 0.3);
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
 
-    // Higher power = higher pitch and louder
-    const baseFreq = 200 + power * 10;
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(baseFreq, now);
-    oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + 0.05);
-
-    const volume = Math.min(0.1 + power * 0.005, 0.3);
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(volume, now + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(this.context.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + 0.1);
+        return 0.1;
+      });
+    });
   }
 
   /** Play ball collision sound */
   playCollisionSound(impactForce: number): void {
-    if (!this.context || this.isMuted) return;
+    this.withAudioContext((context) => {
+      this.playSynth(context, (oscillator, gainNode, now) => {
+        oscillator.type = "triangle";
+        oscillator.frequency.setValueAtTime(300 + impactForce * 20, now);
+        oscillator.frequency.exponentialRampToValueAtTime(150, now + 0.05);
 
-    const now = this.context.currentTime;
-    const oscillator = this.context.createOscillator();
-    const gainNode = this.context.createGain();
+        const volume = Math.min(0.05 + impactForce * 0.01, 0.15);
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(volume, now + 0.005);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
 
-    oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(300 + impactForce * 20, now);
-    oscillator.frequency.exponentialRampToValueAtTime(150, now + 0.05);
-
-    const volume = Math.min(0.05 + impactForce * 0.01, 0.15);
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(volume, now + 0.005);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(this.context.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + 0.07);
+        return 0.07;
+      });
+    });
   }
 
   /** Play cushion bounce sound */
   playCushionSound(): void {
-    if (!this.context || this.isMuted) return;
+    this.withAudioContext((context) => {
+      this.playSynth(context, (oscillator, gainNode, now) => {
+        oscillator.type = "sawtooth";
+        oscillator.frequency.setValueAtTime(150, now);
+        oscillator.frequency.exponentialRampToValueAtTime(80, now + 0.08);
 
-    const now = this.context.currentTime;
-    const oscillator = this.context.createOscillator();
-    const gainNode = this.context.createGain();
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.04, now + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
 
-    oscillator.type = "sawtooth";
-    oscillator.frequency.setValueAtTime(150, now);
-    oscillator.frequency.exponentialRampToValueAtTime(80, now + 0.08);
-
-    gainNode.gain.setValueAtTime(0.0001, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.04, now + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(this.context.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + 0.12);
+        return 0.12;
+      });
+    });
   }
 
   /** Mute/unmute all audio */

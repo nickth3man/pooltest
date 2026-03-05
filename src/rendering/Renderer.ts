@@ -8,7 +8,7 @@ import { Ball } from "../models/Ball.js";
 import { Table } from "../models/Table.js";
 import { Vec2 } from "../models/Vector2.js";
 import { GameState } from "../game/GameState.js";
-import { BALL_RADIUS, CANVAS_WIDTH, CANVAS_HEIGHT } from "../constants.js";
+import { BALL_RADIUS, CANVAS_WIDTH, CANVAS_HEIGHT, VISUAL } from "../constants.js";
 import { TableRenderer } from "./TableRenderer.js";
 import { BallRenderer } from "./BallRenderer.js";
 import { UIRenderer } from "./UIRenderer.js";
@@ -94,14 +94,11 @@ export class Renderer {
     if (!cueBall.inPlay || gameState !== GameState.AIMING) return;
 
     const aimDir = isDragging ? lockedAimDirection : state.aimDirection;
-    const VISUAL = {
-      guideLength: 220,
-      guideStartOffset: 1,
-      maxPullDistance: 140,
-      cueStickLength: 175,
-      cueButtLength: 26
-    };
+    this.drawAimGuide(cueBall, aimDir);
+    this.drawCueStick(cueBall, aimDir, isDragging ? pullDistance : 0);
+  }
 
+  private drawAimGuide(cueBall: Ball, aimDir: Vec2): void {
     this.ctx.save();
     this.ctx.setLineDash([7, 7]);
     this.ctx.lineWidth = 2;
@@ -117,8 +114,9 @@ export class Renderer {
     );
     this.ctx.stroke();
     this.ctx.restore();
+  }
 
-    const pull = isDragging ? pullDistance : 0;
+  private drawCueStick(cueBall: Ball, aimDir: Vec2, pull: number): void {
     const gap = BALL_RADIUS + 2 + pull * 0.6;
 
     const tipX = cueBall.x - aimDir.x * gap;

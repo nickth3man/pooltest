@@ -60,6 +60,15 @@ export class Game {
   }
 
   private setupEventListeners(): void {
+    this.registerBallSunkListener();
+    this.registerScratchListener();
+    this.registerCollisionListener();
+    this.registerCushionListener();
+    this.registerStartDragListener();
+    this.registerEndDragListener();
+  }
+
+  private registerBallSunkListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.BALL_SUNK, (event) => {
         const { ball } = event as BallSunkEvent;
@@ -73,37 +82,47 @@ export class Game {
         }
       })
     );
+  }
 
+  private registerScratchListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.SCRATCH, (event) => {
         const { cueBall } = event as ScratchEvent;
         this.gameRules.handleScratch(cueBall);
       })
     );
+  }
 
+  private registerCollisionListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.COLLISION, (event) => {
         const { impactForce } = event as CollisionEvent;
         this.audioManager.playCollisionSound(impactForce);
       })
     );
+  }
 
+  private registerCushionListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.CUSHION_HIT, () => {
         this.audioManager.playCushionSound();
       })
     );
+  }
 
+  private registerStartDragListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.START_DRAG, () => {
         this.audioManager.ensureContext();
       })
     );
+  }
 
+  private registerEndDragListener(): void {
     this.unsubscribeHandlers.push(
       this.eventBus.on(EventType.END_DRAG, (event) => {
         const { power, direction } = event as EndDragEvent;
-        
+
         if (power > 0.2 && this.cueBall.inPlay) {
           this.physicsEngine.applyShot(this.cueBall, power, direction);
           this.stateManager.startShooting();
