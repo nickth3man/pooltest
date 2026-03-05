@@ -14,6 +14,9 @@ interface AimStateInternal {
 }
 
 export class InputHandler {
+  private readonly touchEventOptions: AddEventListenerOptions = {
+    passive: false,
+  };
   private mouse: Vec2;
   private drag: DragState;
   private aim: AimStateInternal;
@@ -29,11 +32,11 @@ export class InputHandler {
       isDragging: false,
       startX: 0,
       startY: 0,
-      pullDistance: 0
+      pullDistance: 0,
     };
     this.aim = {
       direction: new Vec2(1, 0),
-      lockedDirection: new Vec2(1, 0)
+      lockedDirection: new Vec2(1, 0),
     };
 
     this.bindEvents();
@@ -47,9 +50,26 @@ export class InputHandler {
     this.canvas.addEventListener("mouseleave", this.handleMouseUp);
 
     // Touch events for mobile devices
-    this.canvas.addEventListener("touchmove", this.handleTouchMove);
-    this.canvas.addEventListener("touchstart", this.handleTouchStart);
-    this.canvas.addEventListener("touchend", this.handleMouseUp);
+    this.canvas.addEventListener(
+      "touchmove",
+      this.handleTouchMove,
+      this.touchEventOptions,
+    );
+    this.canvas.addEventListener(
+      "touchstart",
+      this.handleTouchStart,
+      this.touchEventOptions,
+    );
+    this.canvas.addEventListener(
+      "touchend",
+      this.handleMouseUp,
+      this.touchEventOptions,
+    );
+    this.canvas.addEventListener(
+      "touchcancel",
+      this.handleMouseUp,
+      this.touchEventOptions,
+    );
   }
 
   private getMousePosition(clientX: number, clientY: number): Vec2 {
@@ -60,7 +80,7 @@ export class InputHandler {
 
     return new Vec2(
       (clientX - rect.left) * scaleX,
-      (clientY - rect.top) * scaleY
+      (clientY - rect.top) * scaleY,
     );
   }
 
@@ -107,12 +127,12 @@ export class InputHandler {
     this.drag.startX = this.mouse.x;
     this.drag.startY = this.mouse.y;
     this.drag.pullDistance = 0;
-    this.aim.lockedDirection = this.aim.direction.clone();  // Lock aim direction when drag starts
+    this.aim.lockedDirection = this.aim.direction.clone(); // Lock aim direction when drag starts
 
     // Notify game that drag has begun (used to unlock audio context)
     this.eventBus.emit({
       type: EventType.START_DRAG,
-      position: this.mouse.toObject()
+      position: this.mouse.toObject(),
     });
   }
 
@@ -127,7 +147,7 @@ export class InputHandler {
       this.eventBus.emit({
         type: EventType.END_DRAG,
         power,
-        direction: this.aim.lockedDirection.toObject()
+        direction: this.aim.lockedDirection.toObject(),
       });
     }
   };
@@ -135,28 +155,32 @@ export class InputHandler {
   updateAimFromCueBall(cueBallPosition: Vector2): void {
     const direction = new Vec2(
       this.mouse.x - cueBallPosition.x,
-      this.mouse.y - cueBallPosition.y
+      this.mouse.y - cueBallPosition.y,
     ).normalize({ x: 1, y: 0 });
 
     this.aim.direction = direction;
     this.eventBus.emit({
       type: EventType.AIM_CHANGE,
-      direction: direction.toObject()
+      direction: direction.toObject(),
     });
   }
 
   private updateDrag(): void {
     const dragDelta = new Vec2(
       this.mouse.x - this.drag.startX,
-      this.mouse.y - this.drag.startY
+      this.mouse.y - this.drag.startY,
     );
 
     const projection = -dragDelta.dot(this.aim.lockedDirection);
-    this.drag.pullDistance = Vector2Utils.clamp(projection, 0, VISUAL.maxPullDistance);
+    this.drag.pullDistance = Vector2Utils.clamp(
+      projection,
+      0,
+      VISUAL.maxPullDistance,
+    );
 
     this.eventBus.emit({
       type: EventType.DRAG,
-      pullDistance: this.drag.pullDistance
+      pullDistance: this.drag.pullDistance,
     });
   }
 
@@ -164,7 +188,7 @@ export class InputHandler {
     return Vector2Utils.clamp(
       this.drag.pullDistance * SHOT.powerScale,
       0,
-      SHOT.maxPower
+      SHOT.maxPower,
     );
   }
 
@@ -211,8 +235,25 @@ export class InputHandler {
     this.canvas.removeEventListener("mousedown", this.handleMouseDown);
     this.canvas.removeEventListener("mouseup", this.handleMouseUp);
     this.canvas.removeEventListener("mouseleave", this.handleMouseUp);
-    this.canvas.removeEventListener("touchmove", this.handleTouchMove);
-    this.canvas.removeEventListener("touchstart", this.handleTouchStart);
-    this.canvas.removeEventListener("touchend", this.handleMouseUp);
+    this.canvas.removeEventListener(
+      "touchmove",
+      this.handleTouchMove,
+      this.touchEventOptions,
+    );
+    this.canvas.removeEventListener(
+      "touchstart",
+      this.handleTouchStart,
+      this.touchEventOptions,
+    );
+    this.canvas.removeEventListener(
+      "touchend",
+      this.handleMouseUp,
+      this.touchEventOptions,
+    );
+    this.canvas.removeEventListener(
+      "touchcancel",
+      this.handleMouseUp,
+      this.touchEventOptions,
+    );
   }
 }
