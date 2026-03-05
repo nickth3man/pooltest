@@ -9,11 +9,19 @@ import { Game } from "./Game.js";
 const canvas = document.getElementById("table") as HTMLCanvasElement;
 const sunkCountEl = document.getElementById("sunk-count") as HTMLElement;
 const stateTextEl = document.getElementById("state-text") as HTMLElement;
-const shootIndicatorEl = document.getElementById("shoot-indicator") as HTMLElement;
+const shootIndicatorEl = document.getElementById(
+  "shoot-indicator",
+) as HTMLElement;
 const restartBtn = document.getElementById("restart-btn") as HTMLButtonElement;
 
 // Fail fast if HTML structure is incorrect
-if (!canvas || !sunkCountEl || !stateTextEl || !shootIndicatorEl || !restartBtn) {
+if (
+  !canvas ||
+  !sunkCountEl ||
+  !stateTextEl ||
+  !shootIndicatorEl ||
+  !restartBtn
+) {
   throw new Error("Required DOM elements not found");
 }
 
@@ -27,7 +35,8 @@ const game = new Game(canvas, {
   },
   onReadyToShootChange: (ready) => {
     shootIndicatorEl.style.visibility = ready ? "visible" : "hidden";
-  }
+    restartBtn.disabled = !ready;
+  },
 });
 
 // Prevent double-cleanup on rapid page unload

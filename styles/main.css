@@ -16,6 +16,7 @@
   --space-md: 14px;
   --space-lg: 22px;
   --space-xl: 32px;
+  --content-max-width: 1640px;
 }
 
 * {
@@ -51,7 +52,8 @@ body::before {
 }
 
 .wrap {
-  width: min(96vw, 1640px);
+  width: min(100%, var(--content-max-width));
+  margin-inline: auto;
   display: grid;
   gap: var(--space-md);
   justify-items: center;
@@ -71,7 +73,9 @@ body::before {
 }
 
 .game-header {
-  width: min(96vw, 1640px);
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
   text-align: center;
   letter-spacing: 0.08em;
   transform: translateY(-3px);
@@ -111,7 +115,9 @@ body::before {
 }
 
 .table-stage {
-  width: min(96vw, 1640px);
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
   position: relative;
   border-radius: 18px;
   padding: calc(var(--space-md) - 3px);
@@ -161,7 +167,9 @@ canvas {
 }
 
 .hud {
-  width: min(96vw, 1640px);
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-inline: auto;
   display: grid;
   gap: calc(var(--space-md) - 4px);
   grid-template-columns: 1fr 1.2fr 1fr;
@@ -276,6 +284,12 @@ button:hover {
 button:active {
   transform: translateY(1px);
   box-shadow: 0 1px 0 #604a1b;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.35) brightness(0.85);
+  box-shadow: 0 1px 0 #3a2f14;
 }
 
 button:focus-visible {
