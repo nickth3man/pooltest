@@ -1,13 +1,13 @@
 # TypeScript HTML5 Canvas Pool Game
 
-[![CI](https://github.com/nicolas/pooltest/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolas/pooltest/actions/workflows/ci.yml)
-[![GitHub Pages](https://github.com/nicolas/pooltest/actions/workflows/pages.yml/badge.svg)](https://github.com/nicolas/pooltest/actions/workflows/pages.yml)
+[![CI](https://github.com/nickth3man/pooltest/actions/workflows/ci.yml/badge.svg)](https://github.com/nickth3man/pooltest/actions/workflows/ci.yml)
+[![GitHub Pages](https://github.com/nickth3man/pooltest/actions/workflows/pages.yml/badge.svg)](https://github.com/nickth3man/pooltest/actions/workflows/pages.yml)
 
 A pure TypeScript and HTML5 Canvas implementation of a Billiards/Pool game. Built using modern web standards, strict TypeScript, and continuous integration.
 
 ## Play
 
-**[Play the game here](https://nicolas.github.io/pooltest/)** *(Update with GitHub pages link after deployment)*
+**[Play the game here](https://nickth3man.github.io/pooltest/)**
 
 ## Features
 
@@ -35,7 +35,7 @@ See `docs/project-structure.md` for a full layout and conventions.
 ### Installation
 
 ```bash
-git clone https://github.com/nicolas/pooltest.git
+git clone https://github.com/nickth3man/pooltest.git
 cd pooltest
 npm install
 ```
