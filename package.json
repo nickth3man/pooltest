@@ -10,11 +10,15 @@
     "precommit:check": "npm run lint && npm run typecheck",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "audit:security": "npm audit --audit-level=moderate",
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "build": "tsc --noEmit && vite build",
+    "dev": "vite",
+    "preview": "vite preview"
   },
   "lint-staged": {
     "*.{ts,mts,cts,mjs,js}": [
@@ -25,7 +29,10 @@
     ]
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^20.0.0",
     "@vitest/eslint-plugin": "^1.6.9",
     "@vitest/ui": "^4.0.18",
@@ -37,6 +44,7 @@
     "prettier": "^3.6.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.56.1",
+    "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }
 }

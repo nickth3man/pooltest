@@ -1,41 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Canvas Billiards</title>
-  <link rel="stylesheet" href="styles/main.css">
-</head>
-<body>
-  <div class="wrap">
-    <header class="game-header">
-      <p class="kicker">Classic Table Mode</p>
-      <h1>Billiards</h1>
-      <div class="header-line" aria-hidden="true"></div>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Billiards</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="game-header">
+        <p class="kicker">Classic Table Mode</p>
+        <h1>Billiards</h1>
+        <div class="header-line" aria-hidden="true"></div>
+      </header>
 
-    <div class="table-stage">
-      <div class="stage-glow" aria-hidden="true"></div>
-      <div class="stage-frame" aria-hidden="true"></div>
-      <canvas id="table" width="900" height="500" role="img" aria-label="Billiards table game. Use mouse to aim and shoot the cue ball."></canvas>
+      <div class="table-stage">
+        <div class="stage-glow" aria-hidden="true"></div>
+        <div class="stage-frame" aria-hidden="true"></div>
+        <canvas
+          id="table"
+          width="900"
+          height="500"
+          role="img"
+          aria-label="Billiards table game. Use mouse to aim and shoot the cue ball."
+        ></canvas>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card stats">
+          <span class="label">Sunk</span>
+          <span id="sunk-count" class="value">0</span>
+        </div>
+        <div class="hud-card state">
+          <span class="label">State</span>
+          <span id="state-text" class="value" aria-live="polite">AIMING</span>
+        </div>
+        <div class="hud-card actions">
+          <span
+            id="shoot-indicator"
+            class="ready"
+            role="status"
+            aria-live="polite"
+            >Take the shot</span
+          >
+          <button id="restart-btn" type="button">New Rack</button>
+        </div>
+      </div>
     </div>
 
-    <div class="hud">
-      <div class="hud-card stats">
-        <span class="label">Sunk</span>
-        <span id="sunk-count" class="value">0</span>
-      </div>
-      <div class="hud-card state">
-        <span class="label">State</span>
-        <span id="state-text" class="value" aria-live="polite">AIMING</span>
-      </div>
-      <div class="hud-card actions">
-        <span id="shoot-indicator" class="ready" role="status" aria-live="polite">Take the shot</span>
-        <button id="restart-btn" type="button">New Rack</button>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="dist/main.js"></script>
-</body>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
