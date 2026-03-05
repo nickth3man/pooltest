@@ -6,7 +6,7 @@
 import type { PhysicsConfig, ShotConfig, GameConfig } from "./types.js";
 
 /** Canvas dimensions */
-export const CANVAS_WIDTH = 1100;
+export const CANVAS_WIDTH = 1600;
 export const CANVAS_HEIGHT = 500;
 
 /** Ball geometry */
@@ -14,11 +14,11 @@ export const BALL_RADIUS = 11;
 export const BALL_DIAMETER = BALL_RADIUS * 2;
 
 /** Table layout constants */
-export const TABLE_X = 58;
 export const TABLE_Y = 34;
 export const TABLE_WIDTH = 784;
 export const TABLE_HEIGHT = 432;
 export const TABLE_RAIL = 38;
+export const TABLE_X = (CANVAS_WIDTH - TABLE_WIDTH) / 2;
 
 /** Physics constants */
 export const PHYSICS: PhysicsConfig = {
@@ -49,7 +49,7 @@ export const VISUAL = {
   maxPullDistance: 200,
   cueStickLength: 175,
   cueButtLength: 26,
-  powerMeterX: 1060, // WIDTH - 40
+  powerMeterX: CANVAS_WIDTH - 40,
   powerMeterY: 120,
   powerMeterHeight: 240,
   powerMeterWidth: 14,
