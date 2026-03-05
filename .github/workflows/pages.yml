@@ -31,7 +31,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build
-        run: npm run build
+        run: |
+          npm run build
+          # Copy styles to dist for GitHub Pages
+          cp -R styles dist/
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
