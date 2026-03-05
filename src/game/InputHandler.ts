@@ -40,11 +40,13 @@ export class InputHandler {
   }
 
   private bindEvents(): void {
+    // Mouse events for desktop
     this.canvas.addEventListener("mousemove", this.handleMouseMove);
     this.canvas.addEventListener("mousedown", this.handleMouseDown);
     this.canvas.addEventListener("mouseup", this.handleMouseUp);
     this.canvas.addEventListener("mouseleave", this.handleMouseUp);
 
+    // Touch events for mobile devices
     this.canvas.addEventListener("touchmove", this.handleTouchMove);
     this.canvas.addEventListener("touchstart", this.handleTouchStart);
     this.canvas.addEventListener("touchend", this.handleMouseUp);
@@ -52,6 +54,7 @@ export class InputHandler {
 
   private getMousePosition(clientX: number, clientY: number): Vec2 {
     const rect = this.canvas.getBoundingClientRect();
+    // Handle CSS scaling: canvas internal size may differ from display size
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
 
@@ -104,8 +107,9 @@ export class InputHandler {
     this.drag.startX = this.mouse.x;
     this.drag.startY = this.mouse.y;
     this.drag.pullDistance = 0;
-    this.aim.lockedDirection = this.aim.direction.clone();
+    this.aim.lockedDirection = this.aim.direction.clone();  // Lock aim direction when drag starts
 
+    // Notify game that drag has begun (used to unlock audio context)
     this.eventBus.emit({
       type: EventType.START_DRAG,
       position: this.mouse.toObject()

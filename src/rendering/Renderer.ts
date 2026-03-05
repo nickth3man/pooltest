@@ -48,16 +48,18 @@ export class Renderer {
 
   render(state: RenderState): void {
     this.clear();
-    this.tableRenderer.render(state.table, this.feltPattern);
-    this.drawCueAndGuide(state);
-    this.ballRenderer.renderBalls(state.balls);
+    // Render from back to front for proper layering
+    this.tableRenderer.render(state.table, this.feltPattern);  // Table surface and pockets
+    this.drawCueAndGuide(state);                               // Aim guide and cue stick
+    this.ballRenderer.renderBalls(state.balls);                // All balls
     
+    // UI overlays (only when relevant)
     if (state.isDragging) {
-      this.uiRenderer.renderPowerMeter(state.pullDistance);
+      this.uiRenderer.renderPowerMeter(state.pullDistance);    // Shot power indicator
     }
     
-    this.uiRenderer.renderSunkRow(state.sunkNumbers);
-    this.uiRenderer.renderPocketFlashes(state.pocketFlashes);
+    this.uiRenderer.renderSunkRow(state.sunkNumbers);          // Sunk balls display
+    this.uiRenderer.renderPocketFlashes(state.pocketFlashes);  // Pocket hit effects
   }
 
   private clear(): void {
@@ -65,18 +67,21 @@ export class Renderer {
   }
 
   private createFeltPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
+    // Create a small offscreen canvas for the repeating texture
     const patternCanvas = document.createElement("canvas");
     patternCanvas.width = 140;
     patternCanvas.height = 140;
     const pctx = patternCanvas.getContext("2d");
     if (!pctx) return null;
 
+    // Base gradient for felt texture variation
     const gradient = pctx.createLinearGradient(0, 0, patternCanvas.width, patternCanvas.height);
     gradient.addColorStop(0, "rgba(255,255,255,0.03)");
     gradient.addColorStop(1, "rgba(0,0,0,0.03)");
     pctx.fillStyle = gradient;
     pctx.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
 
+    // Add noise: white speckles (simulates felt fibers catching light)
     for (let i = 0; i < 850; i++) {
       const x = Math.random() * patternCanvas.width;
       const y = Math.random() * patternCanvas.height;
@@ -85,6 +90,7 @@ export class Renderer {
       pctx.fillRect(x, y, 1, 1);
     }
 
+    // Add noise: black speckles (simulates shadowed fibers)
     for (let i = 0; i < 450; i++) {
       const x = Math.random() * patternCanvas.width;
       const y = Math.random() * patternCanvas.height;
@@ -93,6 +99,7 @@ export class Renderer {
       pctx.fillRect(x, y, 1, 1);
     }
 
+    // Subtle brush stroke lines for felt nap texture
     pctx.strokeStyle = "rgba(255,255,255,0.022)";
     pctx.lineWidth = 1;
     for (let i = 0; i < 24; i++) {
@@ -148,8 +155,13 @@ export class Renderer {
     this.ctx.restore();
   }
 
+  private easeOutQuad(t: number): number {
+    return 1 - (1 - t) * (1 - t);
+  }
+
   private drawCueStick(cueBall: Ball, aimDir: Vec2, pull: number): void {
-    const gap = BALL_RADIUS + 2 + pull * 0.6;
+    const easedPull = pull > 0 ? this.easeOutQuad(Math.min(pull / VISUAL.maxPullDistance, 1)) * VISUAL.maxPullDistance : 0;
+    const gap = BALL_RADIUS + 2 + easedPull * 0.6;
 
     const tipX = cueBall.x - aimDir.x * gap;
     const tipY = cueBall.y - aimDir.y * gap;

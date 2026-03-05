@@ -5,19 +5,19 @@
 
 import { Game } from "./Game.js";
 
-// Get DOM elements
+// DOM element references - must exist for game to function
 const canvas = document.getElementById("table") as HTMLCanvasElement;
 const sunkCountEl = document.getElementById("sunk-count") as HTMLElement;
 const stateTextEl = document.getElementById("state-text") as HTMLElement;
 const shootIndicatorEl = document.getElementById("shoot-indicator") as HTMLElement;
 const restartBtn = document.getElementById("restart-btn") as HTMLButtonElement;
 
-// Validate required elements
+// Fail fast if HTML structure is incorrect
 if (!canvas || !sunkCountEl || !stateTextEl || !shootIndicatorEl || !restartBtn) {
   throw new Error("Required DOM elements not found");
 }
 
-// Initialize game with UI callbacks
+// Game instance bridges canvas with UI update callbacks
 const game = new Game(canvas, {
   onSunkCountChange: (count) => {
     sunkCountEl.textContent = String(count);
@@ -30,6 +30,7 @@ const game = new Game(canvas, {
   }
 });
 
+// Prevent double-cleanup on rapid page unload
 let isCleanedUp = false;
 
 const handleRestart = (): void => {
@@ -40,14 +41,12 @@ const handleRestart = (): void => {
 
 const handleVisibilityChange = (): void => {
   if (document.hidden) {
-    // Optional: pause game when tab is hidden
+    // Audio auto-suspends on hide; no explicit pause needed
   }
 };
 
 const cleanup = (): void => {
-  if (isCleanedUp) {
-    return;
-  }
+  if (isCleanedUp) return;
 
   isCleanedUp = true;
   restartBtn.removeEventListener("click", handleRestart);
@@ -60,5 +59,4 @@ restartBtn.addEventListener("click", handleRestart);
 document.addEventListener("visibilitychange", handleVisibilityChange);
 window.addEventListener("beforeunload", cleanup, { once: true });
 
-// Start the game
 game.start();

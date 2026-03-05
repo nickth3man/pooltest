@@ -4,6 +4,10 @@
   "description": "Billiards game with TypeScript",
   "type": "module",
   "scripts": {
+    "check": "node ./scripts/check-all.mjs",
+    "clean": "node ./scripts/clean.mjs",
+    "prepare": "husky",
+    "precommit:check": "npm run lint && npm run typecheck",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint . --max-warnings 0",
@@ -12,6 +16,14 @@
     "build": "tsc",
     "dev": "tsc --watch"
   },
+  "lint-staged": {
+    "*.{ts,mts,cts,mjs,js}": [
+      "eslint --max-warnings 0"
+    ],
+    "*.{md,yml,yaml,json}": [
+      "prettier --check"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^20.0.0",
@@ -19,7 +31,10 @@
     "@vitest/ui": "^4.0.18",
     "eslint": "^10.0.2",
     "globals": "^17.4.0",
+    "husky": "^9.1.7",
     "jsdom": "^23.0.0",
+    "lint-staged": "^16.2.2",
+    "prettier": "^3.6.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"

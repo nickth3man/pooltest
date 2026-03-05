@@ -28,18 +28,13 @@ export class PhysicsEngine {
   simulate(balls: Ball[]): void {
     this.lastSimulationCollisionCount = 0;
 
+    // Use substeps for stable collision detection at high velocities
+    // More substeps = more accurate but more CPU intensive
     for (let step = 0; step < PHYSICS.substeps; step++) {
-      // Update ball positions
-      this.updatePositions(balls);
-
-      // Handle cushion collisions
-      this.handleCushions(balls);
-
-      // Resolve ball-to-ball collisions
-      this.resolveCollisions(balls);
-
-      // Detect pocket sinks
-      this.detectPockets(balls);
+      this.updatePositions(balls);      // Move balls based on velocity
+      this.handleCushions(balls);       // Bounce off table edges
+      this.resolveCollisions(balls);    // Handle ball-to-ball hits
+      this.detectPockets(balls);        // Check for sunk balls
     }
   }
 
@@ -129,21 +124,23 @@ export class PhysicsEngine {
     }
   }
 
-  /** Resolve collision between two balls */
+  /** Resolve collision between two balls using elastic collision physics */
   private resolveBallCollision(a: Ball, b: Ball): boolean {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const distSq = dx * dx + dy * dy;
     const minDist = a.radius + b.radius;
 
-    // No collision
+    // Quick reject: no overlap means no collision
     if (distSq > minDist * minDist) return false;
 
     let nx: number;
     let ny: number;
     let dist: number;
 
+    // Handle perfect overlap (rare but possible on respawn)
     if (distSq === 0) {
+      // Deterministic pseudo-random angle based on ball numbers
       const seed = (a.number + 1) * 92821 + (b.number + 1) * 68917;
       const angle = (seed % 360) * (Math.PI / 180);
       nx = Math.cos(angle);
@@ -151,36 +148,39 @@ export class PhysicsEngine {
       dist = 0;
     } else {
       dist = Math.sqrt(distSq);
-      nx = dx / dist;
-      ny = dy / dist;
+      nx = dx / dist;  // Normal vector X
+      ny = dy / dist;  // Normal vector Y
     }
 
     const overlap = minDist - dist;
 
-    // Separate balls to prevent sticking
+    // Positional correction: separate overlapping balls
+    // Distribute equally (0.5 each) to maintain center of mass
     a.x -= nx * overlap * 0.5;
     a.y -= ny * overlap * 0.5;
     b.x += nx * overlap * 0.5;
     b.y += ny * overlap * 0.5;
 
-    // Calculate relative velocity
+    // Calculate relative velocity along collision normal
     const rvx = b.vx - a.vx;
     const rvy = b.vy - a.vy;
     const velAlongNormal = rvx * nx + rvy * ny;
 
-    // Do not resolve if velocities are separating
+    // Skip if balls are already separating (prevents sticking)
     if (velAlongNormal > 0) return true;
 
-    // Calculate impulse with restitution
+    // Apply impulse for elastic collision with restitution
+    // Divide by 2 because masses are equal (simplified pool ball physics)
     const impulse = -(1 + PHYSICS.ballRestitution) * velAlongNormal / 2;
     const impactForce = Math.abs(velAlongNormal);
 
-    // Apply impulse
+    // Apply velocity changes along normal vector
     a.vx -= impulse * nx;
     a.vy -= impulse * ny;
     b.vx += impulse * nx;
     b.vy += impulse * ny;
 
+    // Emit event for sound/feedback (but not for tiny jitters)
     if (impactForce > 0) {
       this.eventBus.emit({
         type: EventType.COLLISION,

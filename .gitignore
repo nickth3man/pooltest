@@ -1,8 +1,11 @@
 node_modules/
 dist/
+.opencode/
 .sisyphus/
 .vscode/
 .DS_Store
 coverage/
 npm-debug.log
 .env
+.env.local
+.env.*.local

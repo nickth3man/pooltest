@@ -130,6 +130,7 @@ export class Table {
 
   /** Generate rack positions for the numbered balls at the foot spot */
   generateRackPositions(): Vector2[] {
+    // Hexagonal close packing: rows are offset by sqrt(3)/2 * diameter
     const rowSpacing = Math.sqrt(3) * BALL_DIAMETER / 2;
     const positions: Vector2[] = [];
 

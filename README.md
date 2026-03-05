@@ -17,6 +17,15 @@ A pure TypeScript and HTML5 Canvas implementation of a Billiards/Pool game. Buil
 - Zero-bundle development environment leveraging ES Modules
 - Component-based architecture (EventBus, GameState, Renderers)
 
+## Project Structure
+
+- Source code: `src/` (organized by domain: `game/`, `physics/`, `rendering/`, `models/`, `core/`, `audio/`)
+- Tests: `src/__tests__/`
+- Documentation: `docs/`
+- Maintenance scripts: `scripts/`
+
+See `docs/project-structure.md` for a full layout and conventions.
+
 ## Local Development
 
 ### Prerequisites
@@ -52,10 +61,24 @@ npm test
 npm run test:run
 ```
 
+### Quality Check
+
+```bash
+# Run lint + typecheck + tests + build
+npm run check
+```
+
 ### Building
 
 ```bash
 npm run build
+```
+
+### Cleanup
+
+```bash
+# Remove generated artifacts
+npm run clean
 ```
 
 ## Contributing

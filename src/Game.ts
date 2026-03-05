@@ -7,6 +7,15 @@ import type { GameState } from "./game/GameState.js";
 
 export type { GameCallbacks } from "./game/GamePresenter.js";
 
+/**
+ * Game - Main orchestrator class that wires together all game components
+ * 
+ * Architecture overview:
+ * - GameSession: Core game state, physics, and rendering
+ * - GamePresenter: Bridges game state to UI callbacks
+ * - GameLoop: Manages the animation frame loop
+ * - EventBus: Decoupled communication between components
+ */
 export class Game {
   private session: GameSession;
   private presenter: GamePresenter;
@@ -14,17 +23,22 @@ export class Game {
   private unsubscribeHandlers: Array<() => void> = [];
 
   constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks = {}) {
+    // Configure canvas to game dimensions
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
+    // Initialize components - order matters for dependency injection
     this.presenter = new GamePresenter(callbacks);
     this.session = new GameSession(canvas);
+    
+    // Create game loop with combined update/render/present cycle
     this.loop = new GameLoop((dt) => {
-      this.session.update(dt);
-      this.session.render();
-      this.presenter.present(this.session.getState());
+      this.session.update(dt);      // Update physics and game logic
+      this.session.render();         // Render current frame
+      this.presenter.present(this.session.getState());  // Update UI
     });
 
+    // Wire up event listeners and initial state presentation
     this.setupEventListeners();
     this.setupStateListeners();
     this.presenter.present(this.session.getState());

@@ -11,6 +11,15 @@ import { GameRules, type RuleResult } from "./GameRules.js";
 import { GameStateManager, type GameState } from "./GameState.js";
 import type { GameStatusSnapshot } from "./GamePresenter.js";
 
+/**
+ * GameSession - Core game controller that orchestrates all systems
+ * 
+ * Responsibilities:
+ * - Manages game objects (balls, table)
+ * - Coordinates update/render cycle
+ * - Handles game rules and state transitions
+ * - Bridges physics, rendering, audio, and input
+ */
 export class GameSession {
   readonly table: Table;
   readonly stateManager: GameStateManager;
@@ -46,9 +55,11 @@ export class GameSession {
     this.inputHandler.reset();
     this.stateManager.reset();
 
+    // Place cue ball at head spot (left side of table)
     this.cueBall = Ball.createCueBall(this.table.headSpot.x, this.table.headSpot.y);
     this.balls.push(this.cueBall);
 
+    // Rack numbered balls in triangle formation at foot spot
     const rackPositions = this.table.generateRackPositions();
     for (let i = 1; i <= 7; i++) {
       const position = rackPositions[i - 1];
@@ -58,10 +69,12 @@ export class GameSession {
   }
 
   update(dt: number): void {
+    // Update aim direction based on mouse position relative to cue ball
     if (this.stateManager.isAiming && this.cueBall.inPlay) {
       this.inputHandler.updateAimFromCueBall(this.cueBall.position);
     }
 
+    // Handle shooting state countdown (shows cue stick animation)
     if (this.stateManager.isShooting) {
       this.shotTimer -= dt;
       if (this.shotTimer <= 0) {
@@ -69,9 +82,11 @@ export class GameSession {
       }
     }
 
+    // Run physics simulation during shooting or balls moving states
     if (this.stateManager.isShooting || this.stateManager.isBallsMoving) {
       this.physicsEngine.simulate(this.balls);
 
+      // Handle cue ball respawn delay after scratch
       if (this.scratchTimer > 0) {
         this.scratchTimer -= dt;
         if (this.scratchTimer <= 0) {
@@ -79,11 +94,13 @@ export class GameSession {
         }
       }
 
+      // Return to aiming when all balls stop (and no respawn pending)
       if (!this.physicsEngine.areBallsMoving(this.balls) && this.scratchTimer <= 0 && !this.stateManager.isAiming) {
         this.stateManager.returnToAiming();
       }
     }
 
+    // Update visual effects (pocket flashes fade out over time)
     this.gameRules.updatePocketFlashes(dt);
   }
 

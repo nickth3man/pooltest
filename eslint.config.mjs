@@ -21,6 +21,16 @@ export default defineConfig(
     },
   },
   {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ["src/__tests__/**/*.ts", "src/**/*.test.ts"],
     plugins: {
       vitest,

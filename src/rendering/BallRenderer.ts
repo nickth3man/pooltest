@@ -1,27 +1,39 @@
 import { Ball } from "../models/Ball.js";
 import type { RenderContext } from "../types.js";
 
+/**
+ * BallRenderer - Handles all ball rendering with realistic shading
+ * 
+ * Rendering order (painter's algorithm):
+ * 1. Contact shadow (ground shadow beneath ball)
+ * 2. Drop shadow (floating shadow for depth)
+ * 3. Ball body with radial gradient
+ * 4. Outline for definition
+ * 5. Number circle (only for numbered balls)
+ * 6. Specular highlight for 3D effect
+ */
 export class BallRenderer {
   constructor(private ctx: RenderContext) {}
 
   renderBalls(balls: Ball[]): void {
     for (const ball of balls) {
-      if (!ball.inPlay) continue;
+      if (!ball.inPlay) continue;  // Skip sunk balls
       this.renderBall(ball);
     }
   }
 
   private renderBall(ball: Ball): void {
-    this.drawContactShadow(ball);
-    this.drawShadow();
-    this.drawBallBody(ball);
-    this.drawBallOutline(ball);
+    // Layer rendering from bottom to top for proper depth
+    this.drawContactShadow(ball);     // Shadow on the table felt
+    this.drawShadow();                // Drop shadow offset
+    this.drawBallBody(ball);          // Main ball surface
+    this.drawBallOutline(ball);       // Edge definition
     
     if (!ball.isCue) {
-      this.drawNumberCircle(ball);
+      this.drawNumberCircle(ball);    // Only numbered balls get this
     }
     
-    this.drawSpecularHighlight(ball);
+    this.drawSpecularHighlight(ball); // Glossy reflection
   }
 
   private drawContactShadow(ball: Ball): void {
@@ -50,6 +62,8 @@ export class BallRenderer {
   }
 
   private drawBallBody(ball: Ball): void {
+    // Create radial gradient for 3D sphere effect
+    // Offset highlight to top-left for light source illusion
     const gradient = this.ctx.createRadialGradient(
       ball.x - ball.radius * 0.38,
       ball.y - ball.radius * 0.36,
@@ -58,9 +72,9 @@ export class BallRenderer {
       ball.y,
       ball.radius
     );
-    gradient.addColorStop(0, "rgba(255,255,255,0.46)");
-    gradient.addColorStop(0.58, ball.color);
-    gradient.addColorStop(1, this.darkenHex(ball.color, 0.4));
+    gradient.addColorStop(0, "rgba(255,255,255,0.46)");  // Highlight
+    gradient.addColorStop(0.58, ball.color);              // Base color
+    gradient.addColorStop(1, this.darkenHex(ball.color, 0.4));  // Shadow edge
     this.ctx.fillStyle = gradient;
     this.ctx.beginPath();
     this.ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);

@@ -1,8 +1,9 @@
 /**
- * AudioManager class
- * Handles all audio playback using Web Audio API
+ * AudioManager - Web Audio API sound synthesis
+ * 
+ * All sounds are procedurally generated (no external audio files).
+ * Uses oscillators with envelope shaping for realistic billiard sounds.
  */
-
 export class AudioManager {
   private context: AudioContext | null = null;
   private isMuted: boolean = false;
@@ -20,8 +21,10 @@ export class AudioManager {
     const oscillator = context.createOscillator();
     const gainNode = context.createGain();
 
+    // Allow caller to configure oscillator and envelope
     const duration = configure(oscillator, gainNode, now);
 
+    // Chain: oscillator -> gain -> speakers
     oscillator.connect(gainNode);
     gainNode.connect(context.destination);
 
@@ -48,19 +51,21 @@ export class AudioManager {
     }
   }
 
-  /** Play pocket sound effect */
+  /** Play pocket sound effect (ball falling in pocket) */
   playPocketSound(): void {
     this.withAudioContext((context) => {
       this.playSynth(context, (oscillator, gainNode, now) => {
+        // Falling thud: triangle wave with pitch drop
         oscillator.type = "triangle";
-        oscillator.frequency.setValueAtTime(740, now);
-        oscillator.frequency.exponentialRampToValueAtTime(370, now + 0.08);
+        oscillator.frequency.setValueAtTime(740, now);              // Start high
+        oscillator.frequency.exponentialRampToValueAtTime(370, now + 0.08);  // Drop pitch
 
-        gainNode.gain.setValueAtTime(0.0001, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.055, now + 0.01);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+        // Quick attack/decay envelope
+        gainNode.gain.setValueAtTime(0.0001, now);                  // Silent start
+        gainNode.gain.exponentialRampToValueAtTime(0.055, now + 0.01);  // Attack
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.085); // Decay
 
-        return 0.09;
+        return 0.09;  // Duration in seconds
       });
     });
   }
