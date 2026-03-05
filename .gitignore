@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.sisyphus/
+.vscode/
+.DS_Store
+coverage/
+npm-debug.log
+.env
