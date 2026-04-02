@@ -36,7 +36,7 @@ jobs:
           # Copy styles to dist for GitHub Pages
           cp -R styles dist/
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
         with:
           enablement: true
       - name: Upload artifact
