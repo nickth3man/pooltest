@@ -1,0 +1,19 @@
+{
+  "name": "pool-ts",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "2D pool/billiards game scaffold (Phaser 4 + Vite + TypeScript).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^4.2.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "vite": "^8.1.0"
+  }
+}

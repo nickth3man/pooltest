@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      rust-dependencies:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "bevy"
+      - dependency-name: "bevy_rapier2d"
+      - dependency-name: "rapier2d"

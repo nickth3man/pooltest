@@ -1,16 +1,123 @@
+# ─── Build outputs ────────────────────────────────────────────────
 node_modules/
 dist/
-.opencode/
-.sisyphus/
+target/
+build/
+out/
+cmake-build-*/
+x64/
+Release/
+Debug/
+
+# ─── Compiled binaries ────────────────────────────────────────────
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.so
+*.dylib
+*.o
+*.obj
+*.wasm
+
+# ─── Rust ─────────────────────────────────────────────────────────
+**/target/
+*.rs.bk
+.bevy/
+
+# ─── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+*.egg
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ─── Go ───────────────────────────────────────────────────────────
+*.test
+*.out
+go.work
+go.work.sum
+
+# ─── CMake ────────────────────────────────────────────────────────
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+compile_commands.json
+*.user
+*.userosscache
+*.sln.docstates
+
+# ─── Gradle / JVM ─────────────────────────────────────────────────
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ─── IDE / editor ─────────────────────────────────────────────────
+.idea/
+.vs/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+*~
 .vscode/
+.storage/
+.httpCache/
+
+# ─── OS files ─────────────────────────────────────────────────────
 .DS_Store
-coverage/
-npm-debug.log
+Thumbs.db
+desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ─── Logs ─────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Environment ──────────────────────────────────────────────────
 .env
 .env.local
 .env.*.local
+.env.example
 
-# Playwright
-playwright-report/
-test-results/
-playwright/.cache/
+# ─── Misc generated ───────────────────────────────────────────────
+*.tsbuildinfo
+*.local
+wasm_exec.js
+profraw/
+*.profraw
+bacon*.toml
+.cargo/config.toml.local

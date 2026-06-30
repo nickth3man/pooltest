@@ -1,0 +1,15 @@
+/pool-go
+/pool-go.exe
+*.exe
+/pool.wasm
+/wasm_exec.js
+*.test
+*.out
+go.work
+go.work.sum
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

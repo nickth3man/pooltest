@@ -1,0 +1,48 @@
+[package]
+name = "pool-rust"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+description = "A 2D pool/billiards game scaffold built with Bevy + Rapier2D."
+license = "MIT OR Apache-2.0"
+publish = false
+
+[features]
+default = []
+debug = ["bevy_rapier2d/debug-render-2d"]
+dev-dynamic = ["bevy/dynamic_linking"]
+
+[dependencies]
+bevy = { version = "0.18.1", default-features = false, features = ["2d"] }
+bevy_rapier2d = { version = "0.34.0" }
+
+[lints.rust]
+# Mark `bevy_lint` as a valid cfg so rust-analyzer/clippy don't warn about it.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(bevy_lint)"] }
+# Surface any unsafe blocks in our own code.
+unsafe_code = "warn"
+
+[lints.clippy]
+# Bevy systems use dependency injection and commonly take many parameters.
+too_many_arguments = "allow"
+# Bevy queries can legitimately access many components.
+type_complexity = "allow"
+# Enforce standard braces for Bevy macros (e.g. children![...]).
+nonstandard_macro_braces = "warn"
+
+[dev-dependencies]
+cargo-husky = { version = "1.5.0", default-features = false, features = ["precommit-hook", "run-cargo-fmt", "run-cargo-clippy"] }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[profile.ci]
+inherits = "dev"
+debug = 0
