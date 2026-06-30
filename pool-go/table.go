@@ -16,17 +16,24 @@ const (
 	railWidth = 26 // visual rail frame thickness around the felt
 
 	pocketRadius = 19 // capture radius of a pocket
+
+	// midX is the horizontal center of the play rectangle, where the side
+	// pockets sit.
+	midX = float64(playLeft+playRight) / 2
+
+	// headSpotFrac and footSpotFrac place the cue ball (head) and rack apex
+	// (foot) along the long axis; the drawn table spots use the same fractions.
+	headSpotFrac = 0.25
+	footSpotFrac = 0.75
 )
 
-// pockets returns the six pocket centers: four corners plus two side pockets.
-func pockets() [6]Vec2 {
-	midX := float64(playLeft+playRight) / 2
-	return [6]Vec2{
-		{playLeft, playTop},
-		{midX, playTop},
-		{playRight, playTop},
-		{playLeft, playBottom},
-		{midX, playBottom},
-		{playRight, playBottom},
-	}
+// pocketCenters holds the six pocket centers: four corners plus two side
+// pockets. The table geometry is fixed, so it is computed once.
+var pocketCenters = [6]Vec2{
+	{playLeft, playTop},
+	{midX, playTop},
+	{playRight, playTop},
+	{playLeft, playBottom},
+	{midX, playBottom},
+	{playRight, playBottom},
 }

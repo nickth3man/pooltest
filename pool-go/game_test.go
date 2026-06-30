@@ -78,7 +78,7 @@ func TestRailReflectsVelocity(t *testing.T) {
 }
 
 func TestPocketCapture(t *testing.T) {
-	p := pockets()[0]
+	p := pocketCenters[0]
 	b := &Ball{Number: 3, Pos: p, Active: true}
 
 	got := step([]*Ball{b})
@@ -124,7 +124,7 @@ func TestSpinReservoirMovesAndSettles(t *testing.T) {
 
 // A ball driven into a cushion tip beside a pocket should rattle back out.
 func TestJawPegRejectsBall(t *testing.T) {
-	peg := jawPegs()[0] // top-left corner tip on the top rail
+	peg := jawPegs[0] // top-left corner tip on the top rail
 	b := &Ball{Number: 1, Pos: Vec2{peg.X, peg.Y + ballRadius - 1}, Vel: Vec2{0, -3}, Active: true}
 
 	if s := reflectOffPeg(b, peg); s <= 0 {

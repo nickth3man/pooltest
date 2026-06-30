@@ -207,8 +207,7 @@ func (g *Game) updateBallInHand() {
 	if !inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		return
 	}
-	mx, my := ebiten.CursorPosition()
-	pos := Vec2{float64(mx), float64(my)}
+	pos := cursorVec()
 	if !g.validCuePlacement(pos) {
 		return
 	}

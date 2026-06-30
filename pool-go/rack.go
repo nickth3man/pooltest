@@ -14,8 +14,8 @@ func newRack() []*Ball {
 	rowDX := spacing * math.Sqrt(3) / 2
 
 	centerY := float64(playTop+playBottom) / 2
-	apexX := float64(playLeft) + 0.75*float64(playRight-playLeft)
-	headX := float64(playLeft) + 0.25*float64(playRight-playLeft)
+	apexX := float64(playLeft) + footSpotFrac*float64(playRight-playLeft)
+	headX := float64(playLeft) + headSpotFrac*float64(playRight-playLeft)
 
 	rows := [5][]int{
 		{1},

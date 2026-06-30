@@ -45,7 +45,6 @@ var (
 func step(balls []*Ball) []int {
 	var pocketed []int
 	inv := 1.0 / float64(substeps)
-	ps := pockets()
 
 	for s := 0; s < substeps; s++ {
 		for _, b := range balls {
@@ -60,7 +59,7 @@ func step(balls []*Ball) []int {
 			if !b.Active {
 				continue
 			}
-			for _, p := range ps {
+			for _, p := range pocketCenters {
 				if b.Pos.Sub(p).LenSq() <= pocketRadius*pocketRadius {
 					b.Active = false
 					b.Vel = Vec2{}
@@ -225,12 +224,11 @@ func resolveRailCollisions(balls []*Ball) {
 // resolveJawCollisions bounces balls off the cushion tips flanking each pocket
 // mouth, producing the characteristic rattle on off-angle shots.
 func resolveJawCollisions(balls []*Ball) {
-	pegs := jawPegs()
 	for _, b := range balls {
 		if !b.Active {
 			continue
 		}
-		for _, c := range pegs {
+		for _, c := range jawPegs {
 			if s := reflectOffPeg(b, c); s > 0 {
 				emitRail(b.Pos, s)
 			}
@@ -267,7 +265,6 @@ func emitRail(pos Vec2, strength float64) {
 // inTopBottomMouth reports whether x falls within the open mouth of a top/bottom
 // pocket (the two corners and the side pocket on that rail).
 func inTopBottomMouth(x float64) bool {
-	midX := float64(playLeft+playRight) / 2
 	return x <= playLeft+cornerMouth || x >= playRight-cornerMouth ||
 		math.Abs(x-midX) <= sideMouth
 }
@@ -278,23 +275,21 @@ func inLeftRightMouth(y float64) bool {
 	return y <= playTop+cornerMouth || y >= playBottom-cornerMouth
 }
 
-// jawPegs returns the twelve cushion tips: two flanking each of the six pockets.
-func jawPegs() []Vec2 {
-	midX := float64(playLeft+playRight) / 2
-	return []Vec2{
-		{playLeft + cornerMouth, playTop},
-		{playLeft, playTop + cornerMouth},
-		{playRight - cornerMouth, playTop},
-		{playRight, playTop + cornerMouth},
-		{playLeft + cornerMouth, playBottom},
-		{playLeft, playBottom - cornerMouth},
-		{playRight - cornerMouth, playBottom},
-		{playRight, playBottom - cornerMouth},
-		{midX - sideMouth, playTop},
-		{midX + sideMouth, playTop},
-		{midX - sideMouth, playBottom},
-		{midX + sideMouth, playBottom},
-	}
+// jawPegs holds the twelve cushion tips: two flanking each of the six pockets.
+// The positions are fixed, so they are computed once.
+var jawPegs = []Vec2{
+	{playLeft + cornerMouth, playTop},
+	{playLeft, playTop + cornerMouth},
+	{playRight - cornerMouth, playTop},
+	{playRight, playTop + cornerMouth},
+	{playLeft + cornerMouth, playBottom},
+	{playLeft, playBottom - cornerMouth},
+	{playRight - cornerMouth, playBottom},
+	{playRight, playBottom - cornerMouth},
+	{midX - sideMouth, playTop},
+	{midX + sideMouth, playTop},
+	{midX - sideMouth, playBottom},
+	{midX + sideMouth, playBottom},
 }
 
 // allStopped reports whether every ball has come to rest.

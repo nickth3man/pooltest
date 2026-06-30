@@ -92,15 +92,15 @@ func (g *Game) drawTable(dst *ebiten.Image) {
 	dst.DrawImage(specSprite, op)
 
 	// Table spots and rail sights.
-	headX := float64(playLeft) + 0.25*float64(playRight-playLeft)
-	footX := float64(playLeft) + 0.75*float64(playRight-playLeft)
+	headX := float64(playLeft) + headSpotFrac*float64(playRight-playLeft)
+	footX := float64(playLeft) + footSpotFrac*float64(playRight-playLeft)
 	centerY := float64(playTop+playBottom) / 2
 	drawSpot(dst, headX, centerY)
 	drawSpot(dst, footX, centerY)
 	g.drawSights(dst)
 
 	// Deep pockets last so they sit on top of felt and sights.
-	for _, p := range pockets() {
+	for _, p := range pocketCenters {
 		drawPocket(dst, p)
 	}
 }
@@ -172,8 +172,7 @@ func (g *Game) drawBall(dst *ebiten.Image, b *Ball) {
 // drawAim draws the shot prediction (cue path, ghost ball at first contact, and
 // the object ball's carom), the tapered cue stick, and the power meter.
 func (g *Game) drawAim(dst *ebiten.Image) {
-	mx, my := ebiten.CursorPosition()
-	pull := g.cue.Pos.Sub(Vec2{float64(mx), float64(my)})
+	pull := g.cue.Pos.Sub(cursorVec())
 	dist := pull.Len()
 	if dist < 1 {
 		return
@@ -245,8 +244,7 @@ func (g *Game) drawSpinWidget(dst *ebiten.Image) {
 }
 
 func (g *Game) drawCuePreview(dst *ebiten.Image) {
-	mx, my := ebiten.CursorPosition()
-	pos := Vec2{float64(mx), float64(my)}
+	pos := cursorVec()
 	c := color.RGBA{0xFF, 0xFF, 0xFF, 0x88}
 	if !g.validCuePlacement(pos) {
 		c = color.RGBA{0xFF, 0x44, 0x44, 0x88}

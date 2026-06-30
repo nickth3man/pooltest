@@ -12,7 +12,7 @@ func (v Vec2) Add(o Vec2) Vec2      { return Vec2{v.X + o.X, v.Y + o.Y} }
 func (v Vec2) Sub(o Vec2) Vec2      { return Vec2{v.X - o.X, v.Y - o.Y} }
 func (v Vec2) Scale(s float64) Vec2 { return Vec2{v.X * s, v.Y * s} }
 func (v Vec2) Dot(o Vec2) float64   { return v.X*o.X + v.Y*o.Y }
-func (v Vec2) Len() float64         { return math.Hypot(v.X, v.Y) }
+func (v Vec2) Len() float64         { return math.Sqrt(v.X*v.X + v.Y*v.Y) }
 func (v Vec2) LenSq() float64       { return v.X*v.X + v.Y*v.Y }
 
 // Perp returns the vector rotated 90° counter-clockwise (screen space).
