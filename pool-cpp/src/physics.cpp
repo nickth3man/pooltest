@@ -192,6 +192,7 @@ RayHit raycastFirstBall(const Vec2& origin,
                         const Vec2& dir,
                         float maxDistance,
                         const std::vector<Ball>& balls,
+                        float cueRadius,
                         int ignoreId) {
     RayHit best;
     best.distance = maxDistance;
@@ -199,9 +200,10 @@ RayHit raycastFirstBall(const Vec2& origin,
     for (const Ball& ball : balls) {
         if (!ball.active || ball.id == ignoreId) continue;
 
+        const float combinedRadius = ball.radius + cueRadius;
         const Vec2 oc = origin - ball.pos;
         const float b = oc.dot(dir);
-        const float c = oc.lengthSq() - ball.radius * ball.radius;
+        const float c = oc.lengthSq() - combinedRadius * combinedRadius;
         const float discriminant = b * b - c;
         if (discriminant < 0.0f) continue;
 
@@ -213,7 +215,7 @@ RayHit raycastFirstBall(const Vec2& origin,
         best.hit = true;
         best.distance = t;
         best.ballId = ball.id;
-        best.point = origin + dir * t;
+        best.point = origin + dir * t; // This is the cue ball's center at collision
         best.normal = (best.point - ball.pos).normalized();
     }
 

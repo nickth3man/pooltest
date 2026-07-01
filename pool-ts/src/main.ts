@@ -17,7 +17,8 @@ class BootScene extends Phaser.Scene {
     const ballRadius = 24;
     this.add.circle(width / 2, height / 2, ballRadius, 0xffffff);
 
-    this.add.circle(width / 2, height / 2, ballRadius, 0x000000, 0.15)
+    this.add
+      .circle(width / 2, height / 2, ballRadius, 0x000000, 0.15)
       .setStrokeStyle(2, 0x000000, 0.35);
 
     this.add

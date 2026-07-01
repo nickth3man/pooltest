@@ -1,12 +1,82 @@
 version: "2"
 
+run:
+  timeout: 5m
+
 linters:
+  default: none
   enable:
+    # Style / best practices.
     - revive
     - gocritic
+    - govet
+    - unparam
+    - nakedret
+    - ineffassign
+    - unused
+    - staticcheck
+    - predeclared
+    - unconvert
+    - mirror
+    - recvcheck
+    - iface
+    - nestif
+
+    # Bug-finders.
     - errorlint
+    - bodyclose
+    - errcheck
+    - nilnil
+    - nilerr
+    - nilnesserr
+    - wastedassign
+
+    # Modern Go idioms.
+    - copyloopvar
+    - intrange
+    - modernize
+    - perfsprint
+
+    # Complexity cap — keeps game-loop functions readable.
+    - gocyclo
+
+    # Testing hygiene.
+    - usetesting
+
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # cosmetic; produces noisy struct-reordering suggestions
+      settings:
+        shadow:
+          strict: false
+    gocyclo:
+      min-complexity: 25
+    nakedret:
+      max-func-lines: 0
+    revive:
+      severity: warning
+    perfsprint:
+      strconcat: false # allows simple string concatenation without fmt
+
+  exclusions:
+    presets:
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: '_test\.go'
+        linters: [gocyclo, errcheck]
+      # Game code legitimately uses os.Exit for unrecoverable startup failure.
+      - source: 'os\.Exit'
+        linters: [errcheck]
 
 formatters:
   enable:
     - gofumpt
     - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/user/pooltest/pool-go

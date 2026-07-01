@@ -1,6 +1,16 @@
-package main
+// Package physics runs the billiards simulation: ball motion, spin transfer,
+// rail and jaw collisions, and pocket capture. It is independent of rendering
+// and audio; it reports impact / drop events through callback hooks so the
+// orchestrator can wire its own feedback.
+package physics
 
-import "math"
+import (
+	"math"
+
+	"github.com/user/pooltest/pool-go/internal/ball"
+	"github.com/user/pooltest/pool-go/internal/table"
+	"github.com/user/pooltest/pool-go/internal/vec"
+)
 
 const (
 	railRestitution = 0.9  // energy kept when bouncing off a cushion
@@ -35,18 +45,18 @@ const (
 // physics layer can stay free of rendering/audio concerns while still reporting
 // impacts, rail hits, and pocket drops.
 var (
-	onBallImpact func(pos Vec2, strength float64)
-	onRailImpact func(pos Vec2, strength float64)
-	onPocketDrop func(pos Vec2)
+	OnBallImpact func(pos vec.Vec2, strength float64)
+	OnRailImpact func(pos vec.Vec2, strength float64)
+	OnPocketDrop func(pos vec.Vec2)
 )
 
-// step advances the simulation by one frame and returns the numbers of the
+// Step advances the simulation by one frame and returns the numbers of the
 // balls pocketed during the frame (the cue ball is reported as 0).
-func step(balls []*Ball) []int {
+func Step(balls []*ball.Ball) []int {
 	var pocketed []int
 	inv := 1.0 / float64(substeps)
 
-	for s := 0; s < substeps; s++ {
+	for range substeps {
 		for _, b := range balls {
 			if !b.Active {
 				continue
@@ -59,26 +69,26 @@ func step(balls []*Ball) []int {
 			if !b.Active {
 				continue
 			}
-			for _, p := range pocketCenters {
-				if b.Pos.Sub(p).LenSq() <= pocketRadius*pocketRadius {
+			for _, p := range table.PocketCenters {
+				if b.Pos.Sub(p).LenSq() <= table.PocketRadius*table.PocketRadius {
 					b.Active = false
-					b.Vel = Vec2{}
-					b.Spin = Vec2{}
+					b.Vel = vec.Vec2{}
+					b.Spin = vec.Vec2{}
 					b.Sinking = true
 					b.SinkFrom = b.Pos
 					b.SinkPos = p
 					b.SinkT = 0
 					pocketed = append(pocketed, b.Number)
-					if onPocketDrop != nil {
-						onPocketDrop(p)
+					if OnPocketDrop != nil {
+						OnPocketDrop(p)
 					}
 					break
 				}
 			}
 		}
-		resolveBallCollisions(balls)
-		resolveRailCollisions(balls)
-		resolveJawCollisions(balls)
+		ResolveBallCollisions(balls)
+		ResolveRailCollisions(balls)
+		ResolveJawCollisions(balls)
 	}
 
 	for _, b := range balls {
@@ -94,14 +104,14 @@ func step(balls []*Ball) []int {
 // applySpin lets the cloth convert a ball's stored spin into linear motion and
 // advance its visible roll, then decays both. The grip is weakest at high speed
 // so follow and draw manifest as the ball slows after contact.
-func applySpin(b *Ball) {
+func applySpin(b *ball.Ball) {
 	if b.Spin.LenSq() > 0 {
 		grip := spinGrip * (1 - math.Min(1, b.Vel.Len()/spinGripSpeed))
 		d := b.Spin.Scale(grip)
 		b.Vel = b.Vel.Add(d)
 		b.Spin = b.Spin.Sub(d).Scale(spinDecay)
 		if b.Spin.LenSq() < spinRest*spinRest {
-			b.Spin = Vec2{}
+			b.Spin = vec.Vec2{}
 		}
 	}
 	b.Angle += b.SideSpin
@@ -113,22 +123,22 @@ func applySpin(b *Ball) {
 
 // applyFriction removes a fixed amount of speed each frame (rolling friction)
 // and snaps slow, spin-free balls to a full stop.
-func applyFriction(b *Ball) {
+func applyFriction(b *ball.Ball) {
 	sp := b.Vel.Len()
 	if sp <= rollDecel {
-		b.Vel = Vec2{}
+		b.Vel = vec.Vec2{}
 	} else {
 		b.Vel = b.Vel.Sub(b.Vel.Scale(rollDecel / sp))
 	}
 	if b.Vel.LenSq() < minSpeed*minSpeed && b.Spin.LenSq() == 0 {
-		b.Vel = Vec2{}
+		b.Vel = vec.Vec2{}
 	}
 }
 
-// resolveBallCollisions handles equal-mass elastic collisions between every
+// ResolveBallCollisions handles equal-mass elastic collisions between every
 // pair of active balls, separating overlaps and exchanging normal momentum.
-func resolveBallCollisions(balls []*Ball) {
-	const minDist = 2 * ballRadius
+func ResolveBallCollisions(balls []*ball.Ball) {
+	const minDist = 2 * ball.Radius
 	for i := range balls {
 		a := balls[i]
 		if !a.Active {
@@ -158,27 +168,27 @@ func resolveBallCollisions(balls []*Ball) {
 				imp := -(1 + ballRestitution) * vn / 2
 				a.Vel = a.Vel.Sub(n.Scale(imp))
 				b.Vel = b.Vel.Add(n.Scale(imp))
-				if onBallImpact != nil {
-					onBallImpact(a.Pos.Add(n.Scale(ballRadius)), -vn)
+				if OnBallImpact != nil {
+					OnBallImpact(a.Pos.Add(n.Scale(ball.Radius)), -vn)
 				}
 			}
 		}
 	}
 }
 
-// resolveRailCollisions keeps ball centers inside the cushion rectangle,
+// ResolveRailCollisions keeps ball centers inside the cushion rectangle,
 // reflecting velocity off whichever rail was crossed — except across the pocket
 // mouths, where balls are allowed to pass through toward the pocket.
-func resolveRailCollisions(balls []*Ball) {
-	minX := playLeft + ballRadius
-	maxX := playRight - ballRadius
-	minY := playTop + ballRadius
-	maxY := playBottom - ballRadius
+func ResolveRailCollisions(balls []*ball.Ball) {
+	minX := table.PlayLeft + ball.Radius
+	maxX := table.PlayRight - ball.Radius
+	minY := table.PlayTop + ball.Radius
+	maxY := table.PlayBottom - ball.Radius
 	for _, b := range balls {
 		if !b.Active {
 			continue
 		}
-		if !inLeftRightMouth(b.Pos.Y) {
+		if !InLeftRightMouth(b.Pos.Y) {
 			switch {
 			case b.Pos.X < minX:
 				b.Pos.X = minX
@@ -198,7 +208,7 @@ func resolveRailCollisions(balls []*Ball) {
 				}
 			}
 		}
-		if !inTopBottomMouth(b.Pos.X) {
+		if !InTopBottomMouth(b.Pos.X) {
 			switch {
 			case b.Pos.Y < minY:
 				b.Pos.Y = minY
@@ -221,27 +231,27 @@ func resolveRailCollisions(balls []*Ball) {
 	}
 }
 
-// resolveJawCollisions bounces balls off the cushion tips flanking each pocket
+// ResolveJawCollisions bounces balls off the cushion tips flanking each pocket
 // mouth, producing the characteristic rattle on off-angle shots.
-func resolveJawCollisions(balls []*Ball) {
+func ResolveJawCollisions(balls []*ball.Ball) {
 	for _, b := range balls {
 		if !b.Active {
 			continue
 		}
-		for _, c := range jawPegs {
-			if s := reflectOffPeg(b, c); s > 0 {
+		for _, c := range JawPegs {
+			if s := ReflectOffPeg(b, c); s > 0 {
 				emitRail(b.Pos, s)
 			}
 		}
 	}
 }
 
-// reflectOffPeg treats a cushion tip as a fixed circle and reflects the ball off
-// it, returning the impact speed (0 if there was no contact).
-func reflectOffPeg(b *Ball, c Vec2) float64 {
+// ReflectOffPeg treats a cushion tip as a fixed circle and reflects the ball
+// off it, returning the impact speed (0 if there was no contact).
+func ReflectOffPeg(b *ball.Ball, c vec.Vec2) float64 {
 	d := b.Pos.Sub(c)
 	distSq := d.LenSq()
-	rr := ballRadius + jawRadius
+	rr := ball.Radius + jawRadius
 	if distSq >= rr*rr || distSq == 0 {
 		return 0
 	}
@@ -256,90 +266,64 @@ func reflectOffPeg(b *Ball, c Vec2) float64 {
 	return -vn
 }
 
-func emitRail(pos Vec2, strength float64) {
-	if onRailImpact != nil {
-		onRailImpact(pos, strength)
+func emitRail(pos vec.Vec2, strength float64) {
+	if OnRailImpact != nil {
+		OnRailImpact(pos, strength)
 	}
 }
 
-// inTopBottomMouth reports whether x falls within the open mouth of a top/bottom
-// pocket (the two corners and the side pocket on that rail).
-func inTopBottomMouth(x float64) bool {
-	return x <= playLeft+cornerMouth || x >= playRight-cornerMouth ||
-		math.Abs(x-midX) <= sideMouth
+// InTopBottomMouth reports whether x falls within the open mouth of a
+// top/bottom pocket (the two corners and the side pocket on that rail).
+func InTopBottomMouth(x float64) bool {
+	return x <= table.PlayLeft+cornerMouth || x >= table.PlayRight-cornerMouth ||
+		math.Abs(x-table.MidX) <= sideMouth
 }
 
-// inLeftRightMouth reports whether y falls within the open mouth of a corner
+// InLeftRightMouth reports whether y falls within the open mouth of a corner
 // pocket on the left/right rail.
-func inLeftRightMouth(y float64) bool {
-	return y <= playTop+cornerMouth || y >= playBottom-cornerMouth
+func InLeftRightMouth(y float64) bool {
+	return y <= table.PlayTop+cornerMouth || y >= table.PlayBottom-cornerMouth
 }
 
-// jawPegs holds the twelve cushion tips: two flanking each of the six pockets.
+// SideMouth is exported for tests that need to place balls precisely outside
+// the open pocket mouth.
+const SideMouth = sideMouth
+
+// JawPegs holds the twelve cushion tips: two flanking each of the six pockets.
 // The positions are fixed, so they are computed once.
-var jawPegs = []Vec2{
-	{playLeft + cornerMouth, playTop},
-	{playLeft, playTop + cornerMouth},
-	{playRight - cornerMouth, playTop},
-	{playRight, playTop + cornerMouth},
-	{playLeft + cornerMouth, playBottom},
-	{playLeft, playBottom - cornerMouth},
-	{playRight - cornerMouth, playBottom},
-	{playRight, playBottom - cornerMouth},
-	{midX - sideMouth, playTop},
-	{midX + sideMouth, playTop},
-	{midX - sideMouth, playBottom},
-	{midX + sideMouth, playBottom},
+var JawPegs = []vec.Vec2{
+	{X: table.PlayLeft + cornerMouth, Y: table.PlayTop},
+	{X: table.PlayLeft, Y: table.PlayTop + cornerMouth},
+	{X: table.PlayRight - cornerMouth, Y: table.PlayTop},
+	{X: table.PlayRight, Y: table.PlayTop + cornerMouth},
+	{X: table.PlayLeft + cornerMouth, Y: table.PlayBottom},
+	{X: table.PlayLeft, Y: table.PlayBottom - cornerMouth},
+	{X: table.PlayRight - cornerMouth, Y: table.PlayBottom},
+	{X: table.PlayRight, Y: table.PlayBottom - cornerMouth},
+	{X: table.MidX - sideMouth, Y: table.PlayTop},
+	{X: table.MidX + sideMouth, Y: table.PlayTop},
+	{X: table.MidX - sideMouth, Y: table.PlayBottom},
+	{X: table.MidX + sideMouth, Y: table.PlayBottom},
 }
 
-// allStopped reports whether every ball has come to rest.
-func allStopped(balls []*Ball) bool {
+// AllStopped reports whether every ball has come to rest.
+func AllStopped(balls []*ball.Ball) bool {
 	for _, b := range balls {
-		if b.moving() {
+		if b.Moving() {
 			return false
 		}
 	}
 	return true
 }
 
-// firstContact walks the aim ray from the cue ball and returns the point at
-// which it would first touch another ball, that ball, and whether a hit exists.
-func (g *Game) firstContact(dir Vec2) (Vec2, *Ball, bool) {
-	best := math.Inf(1)
-	var target *Ball
-	rad := 2 * ballRadius
-	for _, b := range g.balls {
-		if b == g.cue || !b.Active {
-			continue
-		}
-		f := b.Pos.Sub(g.cue.Pos)
-		proj := f.Dot(dir)
-		if proj < 0 {
-			continue // behind the shot
-		}
-		perpSq := f.LenSq() - proj*proj
-		if perpSq > rad*rad {
-			continue // ray misses this ball
-		}
-		t := proj - math.Sqrt(rad*rad-perpSq)
-		if t < best {
-			best, target = t, b
-		}
-	}
-	if target == nil {
-		return Vec2{}, nil, false
-	}
-	return g.cue.Pos.Add(dir.Scale(best)), target, true
-}
-
-// rayToRail returns where a ray from start in direction dir meets the cushion
-// rectangle (inset by the ball radius), used to draw the aim line when the shot
-// will not hit a ball.
-func rayToRail(start, dir Vec2) Vec2 {
-	minX := playLeft + ballRadius
-	maxX := playRight - ballRadius
-	minY := playTop + ballRadius
-	maxY := playBottom - ballRadius
+// RayToRail returns where a ray from start in direction dir meets the cushion
+// rectangle (inset by the ball radius), used to draw the aim line when the
+// shot will not hit a ball.
+func RayToRail(start, dir vec.Vec2) vec.Vec2 {
+	minX := table.PlayLeft + ball.Radius
+	maxX := table.PlayRight - ball.Radius
+	minY := table.PlayTop + ball.Radius
+	maxY := table.PlayBottom - ball.Radius
 	t := math.Inf(1)
 	if dir.X > 1e-9 {
 		t = math.Min(t, (maxX-start.X)/dir.X)

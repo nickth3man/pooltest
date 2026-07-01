@@ -5,6 +5,7 @@ use crate::components::{
     Aiming, BALL_MOVING_THRESHOLD, BALL_RADIUS, CUE_STICK_COLOR, CUE_STICK_GAP, CUE_STICK_LENGTH,
     CUE_STICK_PULLBACK, CUE_STICK_THICKNESS, CueBall, CueStick, MAX_IMPULSE, POWER_RATE, Power,
 };
+use crate::game::GamePhase;
 
 pub fn spawn_cue_stick(
     mut commands: Commands,
@@ -31,6 +32,7 @@ pub fn update_cue_aim(
     cue_stick: Single<(&mut Transform, &mut Visibility), (With<CueStick>, Without<CueBall>)>,
     mut aiming: ResMut<Aiming>,
     mut power: ResMut<Power>,
+    mut next_phase: ResMut<NextState<GamePhase>>,
 ) {
     let (cam, cam_xf) = *camera;
     let Some(cursor) = window.cursor_position() else {
@@ -43,6 +45,7 @@ pub fn update_cue_aim(
 
     let (ball_xf, mut impulse, vel) = cue_ball.into_inner();
     let aim = (cursor_world - ball_xf.translation.xy()).normalize_or_zero();
+    aiming.aim = aim;
     let ball_moving = vel.linear.length_squared() > BALL_MOVING_THRESHOLD;
 
     let (mut stick_xf, mut stick_vis) = cue_stick.into_inner();
@@ -73,7 +76,16 @@ pub fn update_cue_aim(
     }
     if mouse.just_released(MouseButton::Left) && aiming.charging {
         if aim != Vec2::ZERO {
-            impulse.impulse = aim * (power.0 * MAX_IMPULSE);
+            let shot = aim * (power.0 * MAX_IMPULSE);
+            impulse.impulse = shot;
+
+            // English: contact point offset = spin * R perpendicular to aim
+            let perp = Vec2::new(-aim.y, aim.x);
+            let offset = perp * aiming.spin * BALL_RADIUS;
+            impulse.torque_impulse = offset.perp_dot(shot);
+
+            next_phase.set(GamePhase::Shooting);
+            *stick_vis = Visibility::Hidden;
         }
         power.0 = 0.0;
         aiming.charging = false;

@@ -1,15 +1,29 @@
-package main
+// Package game is the orchestrator. It owns the Game struct (the
+// ebiten.Game implementation), the state machine, the input handling, and the
+// rendering of the table, balls, HUD, and aim helpers.
+package game
 
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
+	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
+
+	"github.com/user/pooltest/pool-go/internal/audio"
+	"github.com/user/pooltest/pool-go/internal/ball"
+	"github.com/user/pooltest/pool-go/internal/fx"
+	"github.com/user/pooltest/pool-go/internal/physics"
+	"github.com/user/pooltest/pool-go/internal/rack"
+	"github.com/user/pooltest/pool-go/internal/rules"
+	"github.com/user/pooltest/pool-go/internal/sprites"
+	"github.com/user/pooltest/pool-go/internal/table"
+	"github.com/user/pooltest/pool-go/internal/vec"
 )
 
 type gameState int
@@ -32,14 +46,22 @@ const (
 	spinVisGain = 0.60 // english fed into the visible roll
 )
 
+const (
+	spinWidgetR  = 30.0
+	spinWidgetCx = 56
+	spinWidgetCy = table.ScreenH - 56
+)
+
+var spinWidgetCenter = vec.Vec2{X: float64(spinWidgetCx), Y: float64(spinWidgetCy)}
+
 type player struct {
-	Group Group
+	Group rules.Group
 }
 
 // Game holds the entire match state and implements ebiten.Game.
 type Game struct {
-	balls   []*Ball
-	cue     *Ball
+	balls   []*ball.Ball
+	cue     *ball.Ball
 	players [2]player
 	current int
 
@@ -48,51 +70,51 @@ type Game struct {
 	charging     bool
 	shotPocketed []int
 
-	spin Vec2 // pending english from the dial: x = side, y = follow(-)/draw(+)
+	spin vec.Vec2 // pending english from the dial: x = side, y = follow(-)/draw(+)
 
-	face      *text.GoTextFace
-	smallFace *text.GoTextFace
+	face      text.Face
+	smallFace text.Face
 
 	message string
 
 	// Presentation / feedback state.
-	canvas    *ebiten.Image
-	particles []particle
-	shake     float64
+	canvas *ebiten.Image
+	fx     fx.State
 }
 
 // NewGame loads the font and racks a fresh match.
 func NewGame() *Game {
 	src, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to load embedded font", "err", err)
+		os.Exit(1)
 	}
 	g := &Game{
 		face:      &text.GoTextFace{Source: src, Size: 16},
 		smallFace: &text.GoTextFace{Source: src, Size: 11},
 	}
-	initAudio()
+	audio.Init()
 	// Route physics events into feedback (particles, shake, sound).
-	onBallImpact = func(pos Vec2, strength float64) {
-		g.spawnImpact(pos, strength)
-		playClick(strength)
+	physics.OnBallImpact = func(pos vec.Vec2, strength float64) {
+		fx.SpawnImpact(&g.fx, pos, strength)
+		audio.PlayClick(strength)
 	}
-	onRailImpact = func(_ Vec2, strength float64) {
-		playRail(strength)
+	physics.OnRailImpact = func(_ vec.Vec2, strength float64) {
+		audio.PlayRail(strength)
 		if strength > 6 {
-			g.shake = math.Min(4, g.shake+1)
+			g.fx.Shake = math.Min(4, g.fx.Shake+1)
 		}
 	}
-	onPocketDrop = func(pos Vec2) {
-		g.spawnPuff(pos)
-		playPocket()
+	physics.OnPocketDrop = func(pos vec.Vec2) {
+		fx.SpawnPuff(&g.fx, pos)
+		audio.PlayPocket()
 	}
 	g.reset()
 	return g
 }
 
 func (g *Game) reset() {
-	g.balls = newRack()
+	g.balls = rack.NewRack()
 	g.cue = g.balls[0]
 	g.players = [2]player{}
 	g.current = 0
@@ -100,14 +122,15 @@ func (g *Game) reset() {
 	g.tableOpen = true
 	g.charging = false
 	g.shotPocketed = nil
-	g.spin = Vec2{}
-	g.particles = nil
-	g.shake = 0
+	g.spin = vec.Vec2{}
+	g.fx.Particles = nil
+	g.fx.Shake = 0
 	g.message = "Player 1 to break"
 }
 
+// Update advances the game one frame. It implements ebiten.Game.
 func (g *Game) Update() error {
-	g.tickFX()
+	fx.Tick(&g.fx, g.balls)
 	switch g.state {
 	case stateAiming:
 		g.updateAiming()
@@ -123,6 +146,11 @@ func (g *Game) Update() error {
 	return nil
 }
 
+// Layout implements ebiten.Game.
+func (g *Game) Layout(_, _ int) (int, int) {
+	return table.ScreenW, table.ScreenH
+}
+
 // updateAiming implements a slingshot cue: hold the left button, drag back
 // from the cue ball, and release to fire in the opposite direction with power
 // proportional to the pull distance. The English dial in the corner intercepts
@@ -130,7 +158,7 @@ func (g *Game) Update() error {
 func (g *Game) updateAiming() {
 	m := cursorVec()
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
-		g.spin = Vec2{}
+		g.spin = vec.Vec2{}
 	}
 	if g.inSpinWidget(m) {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
@@ -157,7 +185,7 @@ func (g *Game) updateAiming() {
 
 // fire launches the cue ball along pull with the given power and converts the
 // dialed english into the cue ball's spin reservoir.
-func (g *Game) fire(pull Vec2, power float64) {
+func (g *Game) fire(pull vec.Vec2, power float64) {
 	dir := pull.Normalize()
 	perp := dir.Perp()
 	frac := power / maxPull
@@ -170,20 +198,20 @@ func (g *Game) fire(pull Vec2, power float64) {
 	g.cue.SideSpin = sd * spinVisGain * frac
 	g.cue.Angle = 0
 
-	playCueStrike(frac)
-	g.spin = Vec2{}
+	audio.PlayCueStrike(frac)
+	g.spin = vec.Vec2{}
 	g.shotPocketed = nil
 	g.state = stateShooting
 }
 
 // inSpinWidget reports whether m lies within the English dial.
-func (g *Game) inSpinWidget(m Vec2) bool {
+func (g *Game) inSpinWidget(m vec.Vec2) bool {
 	return m.Sub(spinWidgetCenter).Len() <= spinWidgetR+4
 }
 
 // setSpinFromWidget records the dialed english as a unit offset (clamped to the
 // dial face).
-func (g *Game) setSpinFromWidget(m Vec2) {
+func (g *Game) setSpinFromWidget(m vec.Vec2) {
 	off := m.Sub(spinWidgetCenter).Scale(1 / spinWidgetR)
 	if l := off.Len(); l > 1 {
 		off = off.Scale(1 / l)
@@ -191,14 +219,14 @@ func (g *Game) setSpinFromWidget(m Vec2) {
 	g.spin = off
 }
 
-func cursorVec() Vec2 {
+func cursorVec() vec.Vec2 {
 	mx, my := ebiten.CursorPosition()
-	return Vec2{float64(mx), float64(my)}
+	return vec.Vec2{X: float64(mx), Y: float64(my)}
 }
 
 func (g *Game) updateShooting() {
-	g.shotPocketed = append(g.shotPocketed, step(g.balls)...)
-	if allStopped(g.balls) {
+	g.shotPocketed = append(g.shotPocketed, physics.Step(g.balls)...)
+	if physics.AllStopped(g.balls) {
 		g.resolveTurn()
 	}
 }
@@ -212,8 +240,8 @@ func (g *Game) updateBallInHand() {
 		return
 	}
 	g.cue.Pos = pos
-	g.cue.Vel = Vec2{}
-	g.cue.Spin = Vec2{}
+	g.cue.Vel = vec.Vec2{}
+	g.cue.Spin = vec.Vec2{}
 	g.cue.SideSpin = 0
 	g.cue.Angle = 0
 	g.cue.Active = true
@@ -223,16 +251,16 @@ func (g *Game) updateBallInHand() {
 
 // validCuePlacement reports whether the cue ball may be placed at p: inside the
 // cushions and clear of every other active ball.
-func (g *Game) validCuePlacement(p Vec2) bool {
-	if p.X < playLeft+ballRadius || p.X > playRight-ballRadius ||
-		p.Y < playTop+ballRadius || p.Y > playBottom-ballRadius {
+func (g *Game) validCuePlacement(p vec.Vec2) bool {
+	if p.X < table.PlayLeft+ball.Radius || p.X > table.PlayRight-ball.Radius ||
+		p.Y < table.PlayTop+ball.Radius || p.Y > table.PlayBottom-ball.Radius {
 		return false
 	}
 	for _, b := range g.balls {
 		if b == g.cue || !b.Active {
 			continue
 		}
-		if p.Sub(b.Pos).Len() < 2*ballRadius {
+		if p.Sub(b.Pos).Len() < 2*ball.Radius {
 			return false
 		}
 	}
@@ -256,6 +284,73 @@ func (g *Game) endGame(winner int) {
 	g.message = fmt.Sprintf("Player %d wins!  Press R to play again", winner+1)
 }
 
-func (g *Game) Layout(_, _ int) (int, int) {
-	return screenW, screenH
+// resolveTurn applies 8-ball rules once every ball has come to rest, using
+// the balls pocketed during the shot (g.shotPocketed; the cue ball is
+// reported as 0).
+//
+// Simplifications vs. tournament 8-ball: shots are not "called", the only
+// foul is scratching the cue ball, and clearing your group then sinking the 8
+// on the same stroke still counts as a win.
+func (g *Game) resolveTurn() {
+	cueScratch := false
+	eight := false
+	for _, n := range g.shotPocketed {
+		switch n {
+		case 0:
+			cueScratch = true
+		case 8:
+			eight = true
+		}
+	}
+
+	if eight {
+		cur := g.players[g.current].Group
+		cleared := cur != rules.GroupNone && rules.GroupRemaining(g.balls, cur) == 0
+		if cleared && !cueScratch {
+			g.endGame(g.current)
+		} else {
+			g.endGame(1 - g.current)
+		}
+		return
+	}
+
+	if cueScratch {
+		g.foulBallInHand()
+		return
+	}
+
+	legal := false
+	if g.tableOpen {
+		// The first ball pocketed legally assigns groups to both players.
+		for _, n := range g.shotPocketed {
+			if grp := rules.Of(n); grp != rules.GroupNone {
+				g.players[g.current].Group = grp
+				g.players[1-g.current].Group = rules.Other(grp)
+				g.tableOpen = false
+				legal = true
+				break
+			}
+		}
+	} else {
+		cur := g.players[g.current].Group
+		for _, n := range g.shotPocketed {
+			if rules.Of(n) == cur {
+				legal = true
+				break
+			}
+		}
+	}
+
+	if legal {
+		g.message = rules.MessageForLegal(g.current, g.players[g.current].Group)
+		g.state = stateAiming
+	} else {
+		g.switchTurn()
+	}
+}
+
+// SpriteFor returns the cached shaded body sprite for a ball. Used by render
+// and by tests that need to inspect sprite data.
+func (g *Game) SpriteFor(b *ball.Ball) *ebiten.Image {
+	return sprites.Ball(b, g.smallFace)
 }

@@ -27,7 +27,7 @@ pub fn draw_aim_guide(
     }
 
     let origin = ball_xf.translation.xy();
-    let aim = (aiming.cursor_world - origin).normalize_or_zero();
+    let aim = aiming.aim;
     if aim == Vec2::ZERO {
         return;
     }

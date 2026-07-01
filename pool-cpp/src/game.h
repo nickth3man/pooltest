@@ -17,6 +17,7 @@ struct Game {
     bool aiming = false;
     bool charging = false;
     Vec2 aimDir = {1.0f, 0.0f};
+    Vec2 chargeStartMouse = {0.0f, 0.0f};
     float aimPower = 0.0f;
 
     static constexpr float kMaxShotSpeed = 900.0f;

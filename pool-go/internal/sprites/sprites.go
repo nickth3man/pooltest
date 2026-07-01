@@ -1,18 +1,22 @@
-package main
+// Package sprites builds the per-ball body sprites (shaded sphere with the
+// printed number) and the shared specular / shadow sprites.
+package sprites
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"math"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
+
+	"github.com/user/pooltest/pool-go/internal/ball"
 )
 
-// Sprite caches. Ball bodies are keyed by number (color/stripe derive from it),
-// so they survive re-racks. All are built lazily on first Draw because creating
+// Caches. Ball bodies are keyed by number (color/stripe derive from it), so
+// they survive re-racks. All are built lazily on first Draw because creating
 // ebiten.Images before the game loop starts is not allowed.
 var (
 	ballSprites  = map[int]*ebiten.Image{}
@@ -20,7 +24,8 @@ var (
 	shadowSprite *ebiten.Image
 )
 
-func clamp8(v float64) uint8 {
+// Clamp8 saturates v to the 0-255 range for image color channels.
+func Clamp8(v float64) uint8 {
 	if v <= 0 {
 		return 0
 	}
@@ -30,12 +35,13 @@ func clamp8(v float64) uint8 {
 	return uint8(v)
 }
 
-// ballSprite returns the cached shaded body for a ball, building it on demand.
-func (g *Game) ballSprite(b *Ball) *ebiten.Image {
+// Ball returns the cached shaded body for a ball, building it on demand. The
+// face is the font used to print the ball's number on the sprite.
+func Ball(b *ball.Ball, face text.Face) *ebiten.Image {
 	if img, ok := ballSprites[b.Number]; ok {
 		return img
 	}
-	img := g.buildBallBody(b)
+	img := buildBallBody(b, face)
 	ballSprites[b.Number] = img
 	return img
 }
@@ -44,14 +50,14 @@ func (g *Game) ballSprite(b *Ball) *ebiten.Image {
 // radially symmetric (bright center → dark rim) so it is rotation-invariant —
 // spinning the sprite then only visibly turns the number/stripe, which is the
 // roll cue. Directional gloss is added separately by the fixed specular sprite.
-func (g *Game) buildBallBody(b *Ball) *ebiten.Image {
-	r := ballRadius
+func buildBallBody(b *ball.Ball, face text.Face) *ebiten.Image {
+	r := ball.Radius
 	d := int(math.Ceil(r*2)) + 2
 	c := float64(d) / 2
 	rgba := image.NewRGBA(image.Rect(0, 0, d, d))
 
-	for py := 0; py < d; py++ {
-		for px := 0; px < d; px++ {
+	for py := range d {
+		for px := range d {
 			nx := (float64(px) + 0.5 - c) / r
 			ny := (float64(py) + 0.5 - c) / r
 			rr := nx*nx + ny*ny
@@ -75,10 +81,10 @@ func (g *Game) buildBallBody(b *Ball) *ebiten.Image {
 			}
 			// Go's color.RGBA is alpha-premultiplied: fold shade and alpha in.
 			rgba.SetRGBA(px, py, color.RGBA{
-				clamp8(float64(base.R) * shade * a),
-				clamp8(float64(base.G) * shade * a),
-				clamp8(float64(base.B) * shade * a),
-				clamp8(a * 255),
+				Clamp8(float64(base.R) * shade * a),
+				Clamp8(float64(base.G) * shade * a),
+				Clamp8(float64(base.B) * shade * a),
+				Clamp8(a * 255),
 			})
 		}
 	}
@@ -99,21 +105,29 @@ func (g *Game) buildBallBody(b *Ball) *ebiten.Image {
 	op.PrimaryAlign = text.AlignCenter
 	op.SecondaryAlign = text.AlignCenter
 	op.ColorScale.ScaleWithColor(color.RGBA{0x20, 0x20, 0x20, 0xFF})
-	text.Draw(img, fmt.Sprintf("%d", b.Number), g.smallFace, op)
+	text.Draw(img, strconv.Itoa(b.Number), face, op)
 	return img
 }
 
-// ensureSprites builds the shared specular and shadow sprites once.
-func ensureSprites() {
+// EnsureSprites builds the shared specular and shadow sprites once.
+func EnsureSprites() {
 	if specSprite == nil {
-		specSprite = buildSoftCircle(ballRadius*0.62,
+		specSprite = buildSoftCircle(ball.Radius*0.62,
 			color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}, 0.85, 1.6)
 	}
 	if shadowSprite == nil {
-		shadowSprite = buildSoftCircle(ballRadius*1.15,
+		shadowSprite = buildSoftCircle(ball.Radius*1.15,
 			color.RGBA{0x00, 0x00, 0x00, 0xFF}, 0.40, 1.4)
 	}
 }
+
+// SpecSprite returns the cached shared specular sprite (or nil if not yet
+// built — callers should call EnsureSprites first).
+func SpecSprite() *ebiten.Image { return specSprite }
+
+// ShadowSprite returns the cached shared shadow sprite (or nil if not yet
+// built — callers should call EnsureSprites first).
+func ShadowSprite() *ebiten.Image { return shadowSprite }
 
 // buildSoftCircle renders a radial gradient disc (opaque-ish center fading to
 // transparent edge) in premultiplied alpha, used for highlights and shadows.
@@ -121,8 +135,8 @@ func buildSoftCircle(rad float64, col color.RGBA, maxA, pow float64) *ebiten.Ima
 	d := int(math.Ceil(rad*2)) + 2
 	c := float64(d) / 2
 	rgba := image.NewRGBA(image.Rect(0, 0, d, d))
-	for py := 0; py < d; py++ {
-		for px := 0; px < d; px++ {
+	for py := range d {
+		for px := range d {
 			nx := (float64(px) + 0.5 - c) / rad
 			ny := (float64(py) + 0.5 - c) / rad
 			rr := nx*nx + ny*ny
@@ -131,10 +145,10 @@ func buildSoftCircle(rad float64, col color.RGBA, maxA, pow float64) *ebiten.Ima
 			}
 			a := math.Pow(1-rr, pow) * maxA
 			rgba.SetRGBA(px, py, color.RGBA{
-				clamp8(float64(col.R) * a),
-				clamp8(float64(col.G) * a),
-				clamp8(float64(col.B) * a),
-				clamp8(a * 255),
+				Clamp8(float64(col.R) * a),
+				Clamp8(float64(col.G) * a),
+				Clamp8(float64(col.B) * a),
+				Clamp8(a * 255),
 			})
 		}
 	}

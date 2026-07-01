@@ -131,6 +131,7 @@ void Renderer::draw(const Game& game) const {
             game.aimDir,
             600.0f,
             game.balls,
+            cue->radius,
             kCueBallId);
 
         const float lineLen =
@@ -140,8 +141,7 @@ void Renderer::draw(const Game& game) const {
         DrawLineEx({start.x, start.y}, {end.x, end.y}, 2.0f, Fade(RAYWHITE, 0.75f));
 
         if (hit.hit) {
-            const Vec2 ghostCenter =
-                hit.point - game.aimDir * cue->radius;
+            const Vec2 ghostCenter = hit.point;
             DrawCircleLines(ghostCenter.x, ghostCenter.y, cue->radius, Fade(SKYBLUE, 0.55f));
             DrawLineEx({start.x, start.y},
                        {ghostCenter.x, ghostCenter.y},

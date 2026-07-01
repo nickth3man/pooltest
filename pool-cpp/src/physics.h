@@ -23,6 +23,7 @@ RayHit raycastFirstBall(const Vec2& origin,
                         const Vec2& dir,
                         float maxDistance,
                         const std::vector<Ball>& balls,
+                        float cueRadius,
                         int ignoreId = kCueBallId);
 
 }  // namespace Physics

@@ -1,8 +1,10 @@
-package main
+// Package audio synthesizes all sound effects at startup into raw PCM buffers,
+// so the game ships no sound asset files.
+package audio
 
 import (
 	"math"
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 )
@@ -10,61 +12,68 @@ import (
 // Audio is synthesized at startup into raw PCM buffers, so the game ships no
 // sound files. Ebiten's context plays signed 16-bit little-endian stereo at the
 // context sample rate.
-const audioSampleRate = 44100
+const sampleRate = 44100
 
 var (
-	audioCtx      *audio.Context
-	sndClick      []byte // ball-to-ball contact
-	sndRail       []byte // cushion / jaw
-	sndPocket     []byte // ball dropping
-	sndCue        []byte // cue strike
-	activePlayers []*audio.Player
+	ctx         *audio.Context
+	sndClick    []byte // ball-to-ball contact
+	sndRail     []byte // cushion / jaw
+	sndPocket   []byte // ball dropping
+	sndCue      []byte // cue strike
+	activePlays []*audio.Player
 )
 
-// initAudio creates the audio context and bakes the sound buffers. Safe to call
+// Init creates the audio context and bakes the sound buffers. Safe to call
 // once; further calls are ignored.
-func initAudio() {
-	if audioCtx != nil {
+func Init() {
+	if ctx != nil {
 		return
 	}
-	audioCtx = audio.NewContext(audioSampleRate)
+	ctx = audio.NewContext(sampleRate)
 	sndClick = synthTone(0.06, 880, 55, 0.25)
 	sndRail = synthTone(0.10, 190, 30, 0.12)
 	sndPocket = synthSweep(0.28, 520, 150, 9)
 	sndCue = mix(synthTone(0.05, 1200, 80, 0.2), synthTone(0.07, 130, 40, 0))
 }
 
+// PlayClick plays the ball-to-ball contact sound, scaled by hit strength.
+func PlayClick(strength float64) { play(sndClick, math.Min(1, 0.15+strength*0.08)) }
+
+// PlayRail plays the cushion / jaw sound, scaled by hit strength.
+func PlayRail(strength float64) { play(sndRail, math.Min(0.8, 0.1+strength*0.06)) }
+
+// PlayPocket plays the ball-dropping sound.
+func PlayPocket() { play(sndPocket, 0.7) }
+
+// PlayCueStrike plays the cue-strike sound, scaled by shot power.
+func PlayCueStrike(power float64) { play(sndCue, math.Min(1, 0.3+power*0.6)) }
+
 // play starts a fresh player for a buffer at the given volume, allowing sounds
 // to overlap. Finished players are pruned so they can be collected.
 func play(buf []byte, volume float64) {
-	if audioCtx == nil || buf == nil {
+	if ctx == nil || buf == nil {
 		return
 	}
-	kept := activePlayers[:0]
-	for _, p := range activePlayers {
+	kept := activePlays[:0]
+	for _, p := range activePlays {
 		if p.IsPlaying() {
 			kept = append(kept, p)
 		}
 	}
-	activePlayers = kept
+	activePlays = kept
 
-	p := audioCtx.NewPlayerFromBytes(buf)
+	p := ctx.NewPlayerFromBytes(buf)
 	p.SetVolume(math.Max(0, math.Min(1, volume)))
 	p.Play()
-	activePlayers = append(activePlayers, p)
+	activePlays = append(activePlays, p)
 }
-
-func playClick(strength float64)  { play(sndClick, math.Min(1, 0.15+strength*0.08)) }
-func playRail(strength float64)   { play(sndRail, math.Min(0.8, 0.1+strength*0.06)) }
-func playPocket()                 { play(sndPocket, 0.7) }
-func playCueStrike(power float64) { play(sndCue, math.Min(1, 0.3+power*0.6)) }
 
 // synthTone renders a decaying sine (optionally dusted with noise).
 func synthTone(dur, freq, decay, noise float64) []byte {
-	n := int(dur * audioSampleRate)
+	n := int(dur * sampleRate)
 	buf := make([]byte, n*4)
-	for i := 0; i < n; i++ {
-		t := float64(i) / audioSampleRate
+	for i := range n {
+		t := float64(i) / sampleRate
 		env := math.Exp(-t * decay)
 		v := math.Sin(2*math.Pi*freq*t) * env
 		if noise > 0 {
@@ -77,13 +86,13 @@ func synthTone(dur, freq, decay, noise float64) []byte {
 
 // synthSweep renders a tone that glides from f0 to f1 over its duration.
 func synthSweep(dur, f0, f1, decay float64) []byte {
-	n := int(dur * audioSampleRate)
+	n := int(dur * sampleRate)
 	buf := make([]byte, n*4)
 	phase := 0.0
-	for i := 0; i < n; i++ {
-		t := float64(i) / audioSampleRate
+	for i := range n {
+		t := float64(i) / sampleRate
 		f := f0 + (f1-f0)*(t/dur)
-		phase += 2 * math.Pi * f / audioSampleRate
+		phase += 2 * math.Pi * f / sampleRate
 		writeStereo(buf, i, math.Sin(phase)*math.Exp(-t*decay))
 	}
 	return buf

@@ -22,6 +22,7 @@
 Run from the `pool-ts/` folder.
 
 ### Dependencies
+
 - `npm install` — install deps (creates `node_modules/`, `package-lock.json`)
 - `npm update` — update deps within ranges
 - `npm outdated` — list outdated
@@ -30,12 +31,14 @@ Run from the `pool-ts/` folder.
 - `npm audit` — vulnerability audit; `npm audit fix`
 
 ### Dev / build
+
 - `npm run dev` — Vite dev server with HMR → http://localhost:5173 (bound 0.0.0.0, LAN-accessible; auto next free port if busy)
 - `npx tsc --noEmit` — type-check only
 - `npm run build` — production build (`tsc --noEmit` + `vite build` → `dist/`)
 - `npm run preview` — preview the production build locally
 
 ### Cleanup
+
 - `rm -rf node_modules dist` — full clean reinstall
 
 Requires Node 20.19+ or 22.12+ (Vite 8). No C compiler or native build tools needed.

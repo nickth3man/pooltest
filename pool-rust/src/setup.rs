@@ -63,22 +63,35 @@ pub fn spawn_table(
 }
 
 pub fn spawn_cushions(mut commands: Commands) {
-    let segments: &[(f32, f32, f32, f32)] = &[
-        // (cx, cy, hx, hy)
-        (-225.0, 240.0, 200.0, 15.0),
-        (225.0, 240.0, 200.0, 15.0),
-        (-225.0, -240.0, 200.0, 15.0),
-        (225.0, -240.0, 200.0, 15.0),
-        (-240.0, 0.0, 15.0, 175.0),
-        (240.0, 0.0, 15.0, 175.0),
+    let hw = TABLE_HALF_WIDTH;
+    let hh = TABLE_HALF_HEIGHT;
+    let cr = POCKET_RADIUS_CORNER;
+    let sr = POCKET_RADIUS_SIDE;
+
+    let segments: &[(Vec2, Vec2)] = &[
+        // Top edge
+        (Vec2::new(-hw + cr, hh), Vec2::new(-sr, hh)),
+        (Vec2::new(sr, hh), Vec2::new(hw - cr, hh)),
+        // Right edge
+        (Vec2::new(hw, hh - cr), Vec2::new(hw, sr)),
+        (Vec2::new(hw, -sr), Vec2::new(hw, -hh + cr)),
+        // Bottom edge
+        (Vec2::new(hw - cr, -hh), Vec2::new(sr, -hh)),
+        (Vec2::new(-sr, -hh), Vec2::new(-hw + cr, -hh)),
+        // Left edge
+        (Vec2::new(-hw, -hh + cr), Vec2::new(-hw, -sr)),
+        (Vec2::new(-hw, sr), Vec2::new(-hw, hh - cr)),
     ];
 
-    for (cx, cy, hx, hy) in segments {
+    for (a, b) in segments {
         commands.spawn((
             RigidBody::Fixed,
-            Collider::cuboid(*hx, *hy),
-            Transform::from_xyz(*cx, *cy, 0.0),
-            Restitution::coefficient(CUSHION_RESTITUTION),
+            Collider::segment(*a, *b),
+            Transform::default(),
+            Restitution {
+                coefficient: CUSHION_RESTITUTION,
+                combine_rule: CoefficientCombineRule::Min,
+            },
             Friction::coefficient(CUSHION_FRICTION),
             Cushion,
         ));
@@ -125,10 +138,16 @@ pub fn spawn_rack(
             Transform::from_xyz(*x, *y, 0.0),
             RigidBody::Dynamic,
             Collider::ball(BALL_RADIUS),
-            Restitution::coefficient(BALL_RESTITUTION),
+            Restitution {
+                coefficient: BALL_RESTITUTION,
+                combine_rule: CoefficientCombineRule::Max,
+            },
             Friction::coefficient(BALL_FRICTION),
             ActiveEvents::COLLISION_EVENTS,
-            Ccd::enabled(),
+            Damping {
+                linear_damping: BALL_LINEAR_DAMPING,
+                angular_damping: BALL_ANGULAR_DAMPING,
+            },
             Sleeping::disabled(),
             Ball,
             Number { value: *n },
@@ -147,10 +166,16 @@ pub fn spawn_cue_ball(
         Transform::from_xyz(HEAD_SPOT_X, 0.0, 0.0),
         RigidBody::Dynamic,
         Collider::ball(BALL_RADIUS),
-        Restitution::coefficient(BALL_RESTITUTION),
+        Restitution {
+            coefficient: BALL_RESTITUTION,
+            combine_rule: CoefficientCombineRule::Max,
+        },
         Friction::coefficient(BALL_FRICTION),
         ActiveEvents::COLLISION_EVENTS,
-        Ccd::enabled(),
+        Damping {
+            linear_damping: BALL_LINEAR_DAMPING,
+            angular_damping: BALL_ANGULAR_DAMPING,
+        },
         Sleeping::disabled(),
         ExternalImpulse::default(),
         Ball,

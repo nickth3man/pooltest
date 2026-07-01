@@ -20,6 +20,7 @@ void Game::reset() {
     charging = false;
     aimPower = 0.0f;
     aimDir = {1.0f, 0.0f};
+    chargeStartMouse = {0.0f, 0.0f};
 }
 
 Ball* Game::cueBall() {
@@ -84,12 +85,14 @@ void Game::handleInput() {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         charging = true;
         aimPower = 0.0f;
+        chargeStartMouse = mouse;
         // aimDir is now locked for the duration of the charge
     }
 
     if (charging && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        // Pull distance measured backward along the *locked* aim direction
-        const float pullback = -(toMouse.dot(aimDir));
+        // Pull distance measured backward along the *locked* aim direction relative to initial click
+        Vec2 dragVec = mouse - chargeStartMouse;
+        const float pullback = -(dragVec.dot(aimDir));
         aimPower = std::clamp(pullback / 160.0f, 0.0f, 1.0f);
     }
 
