@@ -21,6 +21,7 @@ linters:
     - recvcheck
     - iface
     - nestif
+    - godot
 
     # Bug-finders.
     - errorlint
@@ -30,6 +31,8 @@ linters:
     - nilerr
     - nilnesserr
     - wastedassign
+    - gosec
+    - dupl
 
     # Modern Go idioms.
     - copyloopvar
@@ -43,6 +46,9 @@ linters:
     # Testing hygiene.
     - usetesting
 
+    # Suppression hygiene.
+    - nolintlint
+
   settings:
     govet:
       enable-all: true
@@ -50,7 +56,7 @@ linters:
         - fieldalignment # cosmetic; produces noisy struct-reordering suggestions
       settings:
         shadow:
-          strict: false
+          strict: true
     gocyclo:
       min-complexity: 25
     nakedret:
@@ -59,6 +65,15 @@ linters:
       severity: warning
     perfsprint:
       strconcat: false # allows simple string concatenation without fmt
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    dupl:
+      threshold: 150 # game code has structurally similar but distinct per-ball/per-pocket logic
+    gosec:
+      excludes:
+        - G115 # intentional bit-packing in audio synthesis, not attacker-controlled input
+        - G404 # math/rand is fine for particle-effect visuals; no crypto/security use
 
   exclusions:
     presets:
@@ -67,10 +82,12 @@ linters:
       - std-error-handling
     rules:
       - path: '_test\.go'
-        linters: [gocyclo, errcheck]
+        linters: [gocyclo, errcheck, dupl, gosec]
       # Game code legitimately uses os.Exit for unrecoverable startup failure.
       - source: 'os\.Exit'
         linters: [errcheck]
+      - source: 'TODO'
+        linters: [godot]
 
 formatters:
   enable:

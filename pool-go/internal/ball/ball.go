@@ -1,46 +1,71 @@
-// Package ball defines the pool-ball model: position, velocity, spin, color,
-// and pocket-drop animation state.
+// Package ball defines the pool-ball model: kinematic state, color, and
+// pocket-drop animation.
 package ball
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/user/pooltest/pool-go/internal/vec"
 )
-
-// Radius is the visual and collision radius shared by all balls.
-const Radius = 11.0
 
 // Ball is a single pool ball. Number 0 is the cue ball; 1-7 are solids, 8 is
 // the black ball, and 9-15 are stripes.
 type Ball struct {
 	Number int
-	Pos    vec.Vec2
-	Vel    vec.Vec2
+	Pos    vec.Vec2 // pixels (synced from RVW after each physics step)
+	Vel    vec.Vec2 // px/frame display velocity (synced from RVW)
 	Color  color.RGBA
 	Stripe bool
-	Active bool // false once pocketed
+	Active bool
 
-	// Spin is a reservoir of "stored" linear motion that the cloth grips and
-	// bleeds back into Vel over time — this is what makes draw, follow, and
-	// swerve work after the cue ball strikes an object ball.
-	Spin vec.Vec2
-	// SideSpin is english about the vertical axis: it drives the visible roll
-	// and tweaks the rebound angle off a cushion.
-	SideSpin float64
-	// Angle is the accumulated visual roll (radians) used when blitting the
-	// rotated ball sprite.
+	Motion MotionState
+	RVW    RVW
+	Params Params
+
+	// Angle is visual roll (radians) from integrated ω_z.
 	Angle float64
 
-	// Pocket-drop animation (cosmetic only — physics ignores inactive balls).
+	frameDt float64 // last step dt in seconds (for angle integration)
+
+	// Pocket-drop animation (cosmetic).
 	Sinking  bool
 	SinkFrom vec.Vec2
 	SinkPos  vec.Vec2
 	SinkT    float64
 }
 
-// Moving reports whether the ball still has motion the simulation must resolve
-// (linear velocity or a spin reservoir that has not yet bled out).
+// Moving reports whether the ball still has motion the simulation must resolve.
 func (b *Ball) Moving() bool {
-	return b.Active && (b.Vel.LenSq() > 0 || b.Spin.LenSq() > 0)
+	if !b.Active || b.Motion == MotionPocketed {
+		return false
+	}
+	if b.Motion != MotionStationary {
+		return true
+	}
+	return b.RVW.V.LenSq() > epsV*epsV || math.Abs(b.RVW.W.Z) > epsW
+}
+
+// CollisionR returns physics radius in pixels.
+func (b *Ball) CollisionR() float64 {
+	return CollisionRadiusPx(b.Params)
+}
+
+// MetersToPx converts a scalar distance from meters to pixels.
+func MetersToPx(m float64) float64 { return m * PxPerM() }
+
+// PxToMeters converts pixels to meters.
+func PxToMeters(px float64) float64 { return px / PxPerM() }
+
+// PosM returns position in meters.
+func (b *Ball) PosM() vec.Vec2 {
+	return vec.Vec2{X: PxToMeters(b.Pos.X), Y: PxToMeters(b.Pos.Y)}
+}
+
+// SetPosPx sets pixel position and RVW.R xy; z = ball radius in meters.
+func (b *Ball) SetPosPx(p vec.Vec2) {
+	b.Pos = p
+	b.RVW.R.X = PxToMeters(p.X)
+	b.RVW.R.Y = PxToMeters(p.Y)
+	b.RVW.R.Z = b.Params.R
 }

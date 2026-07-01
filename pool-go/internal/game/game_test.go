@@ -18,7 +18,7 @@ func TestFirstContactFindsGhostBall(t *testing.T) {
 	if !ok || target != obj {
 		t.Fatalf("firstContact missed the object ball (ok=%v)", ok)
 	}
-	if want := 200.0 - 2*ball.Radius; math.Abs(ghost.X-want) > 0.5 {
+	if want := 200.0 - 2*ball.CollisionRadius(); math.Abs(ghost.X-want) > 0.5 {
 		t.Errorf("ghost ball at x=%.2f, want %.2f", ghost.X, want)
 	}
 }

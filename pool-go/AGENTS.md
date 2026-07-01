@@ -16,7 +16,7 @@
 - **API note (v2.9.x):** `vector.FillCircle(dst *ebiten.Image, cx, cy, r float32, clr color.Color, antialias bool)` — the trailing `antialias bool` is required
 - **Render loop:** update rate set via `ebiten.SetTPS(60)` (decoupled from draw rate); logical size returned by `Layout`
 - **Conventions:** structured logging via `log/slog` (not `log`); randomness via `math/rand/v2` (auto-seeded, not `math/rand`); formatting via `gofumpt` (strict gofmt superset) + `goimports`. Fatal startup errors use `slog.Error` + `os.Exit(1)`.
-- **Project config:** `Makefile` (all workflows), `.golangci.yml` v2 (27 linters), `.editorconfig`, `.gitattributes` (LF on `.go`, CRLF on `.bat`), `.github/workflows/ci.yml` (vet+lint+test+wasm smoke on push/PR), `.github/dependabot.yml` (weekly grouped updates), `LICENSE` (Apache-2.0).
+- **Project config:** `Makefile` (all workflows), `.golangci.yml` v2 (31 linters), `.editorconfig`, `.gitattributes` (LF on `.go`, CRLF on `.bat`), `.github/workflows/ci.yml` (vet+lint+test+wasm smoke on push/PR), `.github/dependabot.yml` (weekly grouped updates), `LICENSE` (Apache-2.0).
 
 ## Dev commands
 
@@ -31,7 +31,7 @@ Run from the `pool-go/` folder. The `Makefile` wraps every common workflow — r
 - `make test` — run all tests; `make test-race` — with the race detector (needs CGO/gcc)
 - `make cover` — generate `cover.html` with line-level coverage
 - `make vet` — `go vet`
-- `make lint` — `golangci-lint` v2 (27 linters across style, bug-finding, modernization, and complexity — see `.golangci.yml` for the full enable list; key ones: revive, gocritic, govet, staticcheck, modernize, perfsprint, errcheck, bodyclose, nilnil, gocyclo, intrange)
+- `make lint` — `golangci-lint` v2 (31 linters across style, bug-finding, modernization, and complexity — see `.golangci.yml` for the full enable list; key ones: revive, gocritic, govet, staticcheck, modernize, perfsprint, errcheck, bodyclose, nilnil, gocyclo, intrange)
 - `make fmt` — `gofumpt -w` + `goimports -w`
 - `make check` — vet + lint + test in one shot (the full quality gate; what CI runs)
 - `make mod-tidy` — tidy go.mod/go.sum

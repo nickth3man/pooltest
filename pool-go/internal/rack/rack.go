@@ -18,7 +18,7 @@ import (
 // the apex, the centered 8-ball, and a legal (overlap-free) triangle matter for
 // the simulation.
 func NewRack() []*ball.Ball {
-	const spacing = 2*ball.Radius + 1 // small gap so racked balls don't start overlapping
+	spacing := 2*ball.Radius + 1
 	rowDX := spacing * math.Sqrt(3) / 2
 
 	centerY := float64(table.PlayTop+table.PlayBottom) / 2
@@ -48,7 +48,8 @@ func NewRack() []*ball.Ball {
 // NewBall returns a ball with the right color and stripe flag for the given
 // number, located at pos.
 func NewBall(number int, pos vec.Vec2) *ball.Ball {
-	b := &ball.Ball{Number: number, Pos: pos, Active: true}
+	b := &ball.Ball{Number: number, Active: true, Params: ball.DefaultParams}
+	b.InitFromXY(pos, ball.DefaultParams)
 	switch {
 	case number == 0:
 		b.Color = ball.ColorWhite

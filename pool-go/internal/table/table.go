@@ -23,7 +23,7 @@ const (
 	RailWidth = 26
 
 	// PocketRadius is the capture radius of a pocket.
-	PocketRadius = 19
+	PocketRadius = 18
 
 	// MidX is the horizontal center of the play rectangle, where the side
 	// pockets sit.

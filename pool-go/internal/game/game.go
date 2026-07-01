@@ -19,6 +19,7 @@ import (
 	"github.com/user/pooltest/pool-go/internal/ball"
 	"github.com/user/pooltest/pool-go/internal/fx"
 	"github.com/user/pooltest/pool-go/internal/physics"
+	"github.com/user/pooltest/pool-go/internal/physics/resolve/stickball"
 	"github.com/user/pooltest/pool-go/internal/rack"
 	"github.com/user/pooltest/pool-go/internal/rules"
 	"github.com/user/pooltest/pool-go/internal/sprites"
@@ -41,9 +42,10 @@ const (
 	minPull  = 6.0   // shorter drags are ignored
 
 	// Spin gains translate a unit dial offset into the cue ball's spin reservoir.
-	followGain  = 0.55 // top/back-spin strength (draw and follow)
-	swerveGain  = 0.30 // sideways carry that bends the cue ball's path
-	spinVisGain = 0.60 // english fed into the visible roll
+	followGain  = 0.58  // top/back-spin strength (draw and follow)
+	swerveGain  = 0.34  // sideways carry that bends the cue ball's path
+	spinVisGain = 0.60  // english fed into the visible roll
+	squirtGain  = 0.035 // instant cue-ball deflection from sidespin (~2° at full english)
 )
 
 const (
@@ -95,20 +97,22 @@ func NewGame() *Game {
 	}
 	audio.Init()
 	// Route physics events into feedback (particles, shake, sound).
-	physics.OnBallImpact = func(pos vec.Vec2, strength float64) {
-		fx.SpawnImpact(&g.fx, pos, strength)
-		audio.PlayClick(strength)
-	}
-	physics.OnRailImpact = func(_ vec.Vec2, strength float64) {
-		audio.PlayRail(strength)
-		if strength > 6 {
-			g.fx.Shake = math.Min(4, g.fx.Shake+1)
-		}
-	}
-	physics.OnPocketDrop = func(pos vec.Vec2) {
-		fx.SpawnPuff(&g.fx, pos)
-		audio.PlayPocket()
-	}
+	physics.SetHooks(
+		func(pos vec.Vec2, strength float64) {
+			fx.SpawnImpact(&g.fx, pos, strength)
+			audio.PlayClick(strength)
+		},
+		func(_ vec.Vec2, strength float64) {
+			audio.PlayRail(strength)
+			if strength > 6 {
+				g.fx.Shake = math.Min(4, g.fx.Shake+1)
+			}
+		},
+		func(pos vec.Vec2) {
+			fx.SpawnPuff(&g.fx, pos)
+			audio.PlayPocket()
+		},
+	)
 	g.reset()
 	return g
 }
@@ -183,19 +187,17 @@ func (g *Game) updateAiming() {
 	g.fire(pull, math.Min(dist, maxPull))
 }
 
-// fire launches the cue ball along pull with the given power and converts the
-// dialed english into the cue ball's spin reservoir.
+// fire launches the cue ball using the instantaneous-point strike model.
 func (g *Game) fire(pull vec.Vec2, power float64) {
 	dir := pull.Normalize()
-	perp := dir.Perp()
 	frac := power / maxPull
 
-	g.cue.Vel = dir.Scale(frac * maxSpeed)
-	fb := -g.spin.Y // dial up = follow, down = draw
-	sd := g.spin.X  // dial right = right english
-	g.cue.Spin = dir.Scale(fb * followGain * frac * maxSpeed).
-		Add(perp.Scale(sd * swerveGain * frac * maxSpeed))
-	g.cue.SideSpin = sd * spinVisGain * frac
+	fb := -g.spin.Y
+	sd := g.spin.X
+
+	g.cue.RVW.V = vec.Vec3{}
+	g.cue.RVW.W = vec.Vec3{}
+	stickball.StrikeFromGame(g.cue, dir, frac*maxSpeed, sd, fb)
 	g.cue.Angle = 0
 
 	audio.PlayCueStrike(frac)
@@ -239,10 +241,11 @@ func (g *Game) updateBallInHand() {
 	if !g.validCuePlacement(pos) {
 		return
 	}
-	g.cue.Pos = pos
+	g.cue.SetPosPx(pos)
+	g.cue.RVW.V = vec.Vec3{}
+	g.cue.RVW.W = vec.Vec3{}
+	g.cue.Motion = ball.MotionStationary
 	g.cue.Vel = vec.Vec2{}
-	g.cue.Spin = vec.Vec2{}
-	g.cue.SideSpin = 0
 	g.cue.Angle = 0
 	g.cue.Active = true
 	g.state = stateAiming

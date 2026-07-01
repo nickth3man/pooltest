@@ -40,3 +40,9 @@ func (v Vec2) Normalize() Vec2 {
 	}
 	return Vec2{v.X / l, v.Y / l}
 }
+
+// Rotate returns v rotated counter-clockwise by rad radians.
+func (v Vec2) Rotate(rad float64) Vec2 {
+	c, s := math.Cos(rad), math.Sin(rad)
+	return Vec2{v.X*c - v.Y*s, v.X*s + v.Y*c}
+}

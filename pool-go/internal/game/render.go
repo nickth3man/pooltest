@@ -35,6 +35,7 @@ var (
 	colorGuide      = color.RGBA{0xFF, 0xFF, 0xFF, 0x55}
 	colorGhost      = color.RGBA{0xFF, 0xFF, 0xFF, 0x99}
 	colorCarom      = color.RGBA{0xBF, 0xE3, 0xFF, 0x77}
+	colorCaromThrow = color.RGBA{0xFF, 0xC8, 0x6B, 0xAA}
 	colorCueWood    = color.RGBA{0xC8, 0x9B, 0x5A, 0xFF}
 	colorCueButt    = color.RGBA{0x3A, 0x24, 0x16, 0xFF}
 	colorCueTip     = color.RGBA{0x3C, 0x6E, 0xC8, 0xFF}
@@ -183,12 +184,13 @@ func (g *Game) drawAim(dst *ebiten.Image) {
 		return
 	}
 	dir := pull.Normalize()
+	aimDir := g.aimDirection(dir)
 	power := math.Min(dist, maxPull)
 	frac := power / maxPull
 
-	end, target, hit := g.firstContact(dir)
+	end, target, hit := g.firstContact(aimDir)
 	if !hit {
-		end = physics.RayToRail(g.cue.Pos, dir)
+		end = physics.RayToRail(g.cue.Pos, aimDir)
 	}
 	clr := powerColor(frac)
 	vector.StrokeLine(dst, float32(g.cue.Pos.X), float32(g.cue.Pos.Y),
@@ -196,11 +198,17 @@ func (g *Game) drawAim(dst *ebiten.Image) {
 
 	if hit {
 		vector.StrokeCircle(dst, float32(end.X), float32(end.Y), ball.Radius, 1.5, colorGhost, true)
-		carom := target.Pos.Sub(end)
-		if carom.LenSq() > 0 {
-			c2 := target.Pos.Add(carom.Normalize().Scale(60))
+		caromDir := g.caromDirection(end, target.Pos, aimDir, frac)
+		if caromDir.LenSq() > 0 {
+			c2 := target.Pos.Add(caromDir.Scale(60))
+			caromClr := colorCarom
+			n := target.Pos.Sub(end).Normalize()
+			cutAngle := math.Acos(clampDot(math.Abs(aimDir.Dot(n))))
+			if math.Abs(physics.EstimateThrowDeg(cutAngle, frac, g.spin.X, -g.spin.Y)) > 1.5 {
+				caromClr = colorCaromThrow
+			}
 			vector.StrokeLine(dst, float32(target.Pos.X), float32(target.Pos.Y),
-				float32(c2.X), float32(c2.Y), 1.5, colorCarom, true)
+				float32(c2.X), float32(c2.Y), 1.5, caromClr, true)
 		}
 	}
 
