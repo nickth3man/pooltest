@@ -1,2 +1,0 @@
-# This is a binary crate, not a library, so API-stability linting is unnecessary.
-avoid-breaking-exported-api = false
