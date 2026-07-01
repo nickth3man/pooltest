@@ -4,13 +4,13 @@ A multi-language billiards/pool game implemented in **7 different tech stacks**.
 
 | Implementation | Language | Framework / Engine | Platform | Status | Repo |
 |---------------|----------|-------------------|----------|--------|------|
-| pool-go | Go | Ebitengine v2.9 | Desktop + WASM | **Full game** | [`YOUR_USERNAME/pool-go`](https://github.com/YOUR_USERNAME/pool-go) |
-| pool-cpp | C++17 | raylib 6.0 | Desktop | **Feature-complete** | [`YOUR_USERNAME/pool-cpp`](https://github.com/YOUR_USERNAME/pool-cpp) |
-| pool-ts | TypeScript | Phaser 4 + Vite 8 | Browser | **Scaffold** | [`YOUR_USERNAME/pool-ts`](https://github.com/YOUR_USERNAME/pool-ts) |
-| pool-python | Python 3.11+ | pygame-ce | Desktop | **Scaffold** | [`YOUR_USERNAME/pool-python`](https://github.com/YOUR_USERNAME/pool-python) |
-| pool-rust | Rust | Bevy 0.18 + Rapier2D | Desktop | **Scaffold** | [`YOUR_USERNAME/pool-rust`](https://github.com/YOUR_USERNAME/pool-rust) |
-| pool-kotlin-2d | Kotlin | kool + Box2D (kool-physics-2d) | Desktop + Browser | **Scaffold** | [`YOUR_USERNAME/pool-kotlin-2d`](https://github.com/YOUR_USERNAME/pool-kotlin-2d) |
-| pool-kotlin-3d | Kotlin | kool + NVIDIA PhysX (kool-physics) | Desktop (JVM) | **Scaffold** | [`YOUR_USERNAME/pool-kotlin-3d`](https://github.com/YOUR_USERNAME/pool-kotlin-3d) |
+| pool-go | Go | Ebitengine v2.9 | Desktop + WASM | **Full game** | [`nickth3man/pool-go`](https://github.com/nickth3man/pool-go) |
+| pool-cpp | C++17 | raylib 6.0 | Desktop | **Feature-complete** | [`nickth3man/pool-cpp`](https://github.com/nickth3man/pool-cpp) |
+| pool-ts | TypeScript | Phaser 4 + Vite 8 | Browser | **Scaffold** | [`nickth3man/pool-ts`](https://github.com/nickth3man/pool-ts) |
+| pool-python | Python 3.11+ | pygame-ce | Desktop | **Scaffold** | [`nickth3man/pool-python`](https://github.com/nickth3man/pool-python) |
+| pool-rust | Rust | Bevy 0.18 + Rapier2D | Desktop | **Scaffold** | [`nickth3man/pool-rust`](https://github.com/nickth3man/pool-rust) |
+| pool-kotlin-2d | Kotlin | kool + Box2D (kool-physics-2d) | Desktop + Browser | **Scaffold** | [`nickth3man/pool-kotlin-2d`](https://github.com/nickth3man/pool-kotlin-2d) |
+| pool-kotlin-3d | Kotlin | kool + NVIDIA PhysX (kool-physics) | Desktop (JVM) | **Scaffold** | [`nickth3man/pool-kotlin-3d`](https://github.com/nickth3man/pool-kotlin-3d) |
 
 Replace `YOUR_USERNAME` in the links above with your actual GitHub username or organization.
 
