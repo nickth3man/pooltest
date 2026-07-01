@@ -12,8 +12,6 @@ A multi-language billiards/pool game implemented in **7 different tech stacks**.
 | pool-kotlin-2d | Kotlin | kool + Box2D (kool-physics-2d) | Desktop + Browser | **Scaffold** | [`nickth3man/pool-kotlin-2d`](https://github.com/nickth3man/pool-kotlin-2d) |
 | pool-kotlin-3d | Kotlin | kool + NVIDIA PhysX (kool-physics) | Desktop (JVM) | **Scaffold** | [`nickth3man/pool-kotlin-3d`](https://github.com/nickth3man/pool-kotlin-3d) |
 
-Replace `YOUR_USERNAME` in the links above with your actual GitHub username or organization.
-
 ## Local copies
 
 Each game has been moved to a sibling directory next to this meta-repo:
